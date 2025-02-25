@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#include "DelayModelStore.h"
+
 namespace ska_mid_cbf_fodm_gen
 {
 
@@ -18,7 +20,14 @@ struct FirstOrderDelayModelsRegisterSet
     uint64_t first_output_timestamp;
 };
 
-
+FirstOrderDelayModelsRegisterSet CalcFodmRegValues( 
+    FoPoly &fo_poly,
+    uint32_t input_sample_rate,
+    uint32_t output_sample_rate,
+    double freq_down_shift,
+    double freq_align_shift,
+    double freq_wb_shift,
+    double freq_scfo_shift );
 
 }; // namespace ska_mid_cbf_fodm_gen
 
