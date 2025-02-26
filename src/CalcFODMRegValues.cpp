@@ -5,7 +5,8 @@
 #include <boost/math/special_functions/round.hpp>
 using namespace boost::multiprecision;
 
-using namespace ska_mid_cbf_fodm_gen;
+namespace ska_mid_cbf_fodm_gen
+{
 
 /**
  * Uncomment to not apply the delay_linear_error_samples to delay_constant
@@ -42,7 +43,7 @@ cpp_bin_float_50 mod_pmhalf(cpp_bin_float_50 val)
  *
  */
 FirstOrderDelayModelsRegisterSet CalcFodmRegValues( 
-    FoPoly &fo_poly,
+    const FoPoly &fo_poly,
     uint32_t input_sample_rate,
     uint32_t output_sample_rate,
     double freq_down_shift,
@@ -252,3 +253,5 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
 
   return fodm_reg_values;
 }
+
+}; // namespace ska_mid_cbf_fodm_gen

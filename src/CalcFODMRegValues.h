@@ -21,7 +21,7 @@ struct FirstOrderDelayModelsRegisterSet
 };
 
 FirstOrderDelayModelsRegisterSet CalcFodmRegValues( 
-    FoPoly &fo_poly,
+    const FoPoly &fo_poly,
     uint32_t input_sample_rate,
     uint32_t output_sample_rate,
     double freq_down_shift,

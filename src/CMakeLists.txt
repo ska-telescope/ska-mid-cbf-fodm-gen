@@ -12,6 +12,12 @@ set( TARGET_LIB ${PROJECT_NAME}-lib )
 
 list( APPEND TARGET_SRCS ${PROJECT_SOURCE_DIR}/src/CalcFODMRegValues.cpp )
 
+message( STATUS "${PROJECT_NAME}: Defined target source file list..." )
+foreach( src ${TARGET_SRCS} )
+	message(STATUS "    ${src}")
+endforeach()
+
+
 ################################################################################
 # Specify the libraries for all targets
 ################################################################################
@@ -19,6 +25,7 @@ link_libraries(
   ${CONAN_LIBS}
   ${CMAKE_DL_LIBS}
 )
+message( STATUS "${PROJECT_NAME}: Defined linked library list for src targets..." )
 
 if ( CMAKE_BUILD_TYPE MATCHES Debug )
 	add_subdirectory( test )
@@ -40,6 +47,9 @@ target_include_directories( ${TARGET_OBJ}
 	)
 message( STATUS "${PROJECT_NAME}: Defined include directory list for src targets..." )
 get_property( dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+foreach( src ${dirs})
+	message(STATUS "    ${src}")
+endforeach()
 
 ################################################################################
 # Configure target static library
@@ -49,6 +59,7 @@ get_property( dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECT
 
 message(STATUS "${PROJECT_NAME}: Creating static library ${TARGET_LIB}" )
 add_library( ${TARGET_LIB} STATIC $<TARGET_OBJECTS:${TARGET_OBJ}> )
+target_link_libraries(${TARGET_LIB} -lquadmath)
 
 ################################################################################
 # Configure target properties
@@ -58,5 +69,9 @@ set_target_properties( ${TARGET_LIB} ${TARGET_OBJ}
 	PROPERTIES 
 	COMPILE_FLAGS "${PROJECT_COMPILER_FLAGS}"
 	LINK_FLAGS "${PROJECT_LINKER_FLAGS}"
-	OUTPUT_NAME ${PACKAGE_NAME}
+	OUTPUT_NAME ${PROJECT_NAME}
 )
+
+foreach(src ${LINKED_LIBS})
+	message(STATUS "    ${src}")
+endforeach()

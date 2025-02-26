@@ -1,7 +1,7 @@
 import csv
 from decimal import Decimal
 import math
-
+import sys
 
 def to_int(val, scale=1):
     return round(Decimal(val) * Decimal(scale))
@@ -72,15 +72,15 @@ def fodm_calc_ref(test_input_csv, output_csv):
                 current_output_timestamp_samples * resampling_rate
             )  # in units of input samples.
 
-            delay_linear = resampling_rate + Decimal(fo_delay_linear)
+            delay_linear = resampling_rate * (Decimal(fo_delay_linear)+1)
 
-            delay_linear_int = to_int(delay_linear, 2**31)
+            delay_linear_int = to_int(delay_linear, 2**63)
             out_row["delay_linear"] = delay_linear_int
 
             # Maybe remove a small amout of delay, so that hit zero resampling error in the middle of the FODM instead of only
             # at the end - giving an overall positive (200fs?) delay error. Being related to the sample rate (k) here makes some sense.
             delay_linear_error_samples = (
-                (Decimal(delay_linear_int) * Decimal(2**-31)) - delay_linear
+                (Decimal(delay_linear_int) * Decimal(2**-63)) - delay_linear
             ) * fodm_output_samples
             # print(delay_linear, Decimal(delay_linear_int) * Decimal(2**-31),  fodm_output_samples , delay_linear_error/2 * 2**32)
 
@@ -134,19 +134,20 @@ def fodm_calc_ref(test_input_csv, output_csv):
             )
             
             out_row['phase_constant'] = int(
-                mod_pmhalf(phase_const) * 2**31
+                round(mod_pmhalf(phase_const) * 2**31)
             )
             out_row['phase_linear'] = int(
-                mod_pmhalf(phase_linear) * 2**31
+                round(mod_pmhalf(phase_linear) * 2**63)
             )
             out_row['validity_period'] = int(fodm_output_samples) - 1
 
+            # need to limit to 32 bit
             output_pps_timestamp = (
                 Decimal(math.ceil(current_output_timestamp_samples / osr))
                 * osr
             )
             output_pps_timestamp += hodm_output_timestamp_samples
-            out_row['output_PPS'] = int(output_pps_timestamp)
+            out_row['output_PPS'] = int(output_pps_timestamp) & 0xffffffff 
 
             first_output_timestamp_samples = (
                 current_output_timestamp_samples
@@ -159,6 +160,9 @@ def fodm_calc_ref(test_input_csv, output_csv):
             writer.writerow(out_row)
 
 if __name__ == '__main__':
-    input_csv = 'fodm_test_input.csv'
-    output_csv = 'python_ref_output.csv'
+    if len(sys.argv) < 3:
+        print(f"Usage: python3 fodm_calc_ref.py <input_csv> <output_csv>")
+        sys.exit(1)
+    input_csv = sys.argv[1]
+    output_csv = sys.argv[2]
     fodm_calc_ref(input_csv, output_csv)
