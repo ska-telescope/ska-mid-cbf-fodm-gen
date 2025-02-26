@@ -39,6 +39,7 @@ class SkaMidCbfFodmGen(ConanFile):
     no_copy_source = True
 
     def requirements(self):
+        self.requires("boost/1.86.0")
         if ( self.settings.build_type == "Debug" ):
             self.requires("gtest/1.15.0")
 
