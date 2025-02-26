@@ -29,7 +29,11 @@ include:
 
 # Python
   - project: 'ska-telescope/templates-repository'
-    file: 'gitlab-ci/includes/python.gitlab-ci.yml'
+    file: 'gitlab-ci/includes/python-lint.gitlab-ci.yml'
+  - project: 'ska-telescope/templates-repository'
+    file: 'gitlab-ci/includes/python-build.gitlab-ci.yml'
+  - project: 'ska-telescope/templates-repository'
+    file: 'gitlab-ci/includes/python-test.gitlab-ci.yml'
 
 # Docs
   - project: 'ska-telescope/templates-repository'
