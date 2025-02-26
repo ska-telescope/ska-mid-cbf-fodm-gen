@@ -63,7 +63,7 @@ python-lint:
 
 cpp-build:
   stage: build
-  image: ubuntu:22.04
+#  image: ubuntu:22.04
   script:
     - mkdir cpp_build && cd cpp_build
     - cmake ..
@@ -76,7 +76,7 @@ cpp-build:
 
 cpp-test:
   stage: test
-  image: ubuntu:22.04
+#  image: ubuntu:22.04
   script:
     - cd cpp_build
     - ctest --output-on-failure --force-new-ctest-process
