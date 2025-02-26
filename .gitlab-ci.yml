@@ -64,9 +64,11 @@ python-lint:
 cpp-build:
   stage: build
   script:
+    - poetry install
     - mkdir cpp_build && cd cpp_build
-    - cmake ../cpp
-    - cmake --build .
+    - poetry run conan install .. --output-folder=. --settings build_type=Debug --build=gtest
+    - poetry run cmake .. -DCMAKE_BUILD_TYPE=Debug
+    - poetry run cmake --build .
   artifacts:
     name: "$CI_COMMIT_REF_NAME-build"
     paths:
