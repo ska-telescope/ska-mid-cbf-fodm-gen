@@ -25,8 +25,8 @@ message( STATUS "CONAN_INCLUDE_DIRS: ${CONAN_INCLUDE_DIRS}" )
 message( STATUS "CONAN_LIBS: ${CONAN_LIBS}" )
 message( STATUS "CMAKE_DL_LIBS: ${CMAKE_DL_LIBS}" )
 link_libraries( 
-  boost::math
-	boost::multiprecision
+  Boost::math
+	Boost::multiprecision
   ${CMAKE_DL_LIBS}
 )
 message( STATUS "${PROJECT_NAME}: Defined linked library list for src targets..." )
