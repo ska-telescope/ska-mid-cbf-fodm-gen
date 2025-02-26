@@ -90,5 +90,5 @@ validate-test-results:
   script:
     # TODO
     - cat cpp_build/reports/unit-tests.xml
-    - cat build/reports/unit_tests.xml
+    - cat build/reports/unit-tests.xml
 
