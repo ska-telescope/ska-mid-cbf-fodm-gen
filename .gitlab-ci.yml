@@ -36,8 +36,8 @@ include:
     file: 'gitlab-ci/includes/python-test.gitlab-ci.yml'
 
 # Docs
-  - project: 'ska-telescope/templates-repository'
-    file: 'gitlab-ci/includes/docs.gitlab-ci.yml'
+  # - project: 'ska-telescope/templates-repository'
+  #   file: 'gitlab-ci/includes/docs.gitlab-ci.yml'
 
 # Release
   - project: 'ska-telescope/templates-repository'
