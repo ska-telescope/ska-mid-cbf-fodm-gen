@@ -63,7 +63,6 @@ python-lint:
 
 cpp-build:
   stage: build
-#  image: ubuntu:22.04
   script:
     - mkdir cpp_build && cd cpp_build
     - cmake ../cpp
@@ -76,7 +75,20 @@ cpp-build:
 
 cpp-test:
   stage: test
-#  image: ubuntu:22.04
   script:
-    - cd cpp_build
-    - ctest --output-on-failure --force-new-ctest-process
+    - cd cpp_build && mkdir reports
+    - ctest --output-on-failure --force-new-ctest-process --output-junit reports/unit-tests.xml
+  artifacts:
+    paths:
+      - cpp_build/
+    reports:
+      junit: cpp_build/reports/unit-tests.xml
+
+validate-test-results:
+  stage: test
+  needs: ["cpp-test", "python-test"]
+  script:
+    # TODO
+    - cat cpp_build/reports/unit-tests.xml
+    - cat build/reports/unit_tests.xml
+
