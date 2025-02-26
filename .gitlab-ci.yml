@@ -77,7 +77,7 @@ cpp-build:
   #     time poetry install --all-extras;
   script:
     - mkdir cpp_build && cd cpp_build
-    - conan install .. --output-folder=. --settings build_type=Debug --build=gtest
+    - conan install .. --output-folder=. --settings build_type=Debug --build=gtest --build=boost
     - cmake .. -DCMAKE_BUILD_TYPE=Debug
     - cmake --build .
   artifacts:
