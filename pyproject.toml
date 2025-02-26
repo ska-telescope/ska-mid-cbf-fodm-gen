@@ -16,6 +16,7 @@ packages = [{ include = "ska_mid_cbf_fodm_gen", from = "python" }]
 [tool.poetry.dependencies]
 python = "~3.10"
 conan = "1.60.1"
+numpy = "^1.26.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest-pydocstyle = "2.3.2"
