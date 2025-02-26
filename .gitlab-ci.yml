@@ -40,12 +40,12 @@ include:
   #   file: 'gitlab-ci/includes/docs.gitlab-ci.yml'
 
 # Release
-  - project: 'ska-telescope/templates-repository'
-    file: 'gitlab-ci/includes/release.gitlab-ci.yml'
+  # - project: 'ska-telescope/templates-repository'
+  #   file: 'gitlab-ci/includes/release.gitlab-ci.yml'
 
 # .post step finalisers eg: badges
-  - project: 'ska-telescope/templates-repository'
-    file: 'gitlab-ci/includes/finaliser.gitlab-ci.yml'
+  # - project: 'ska-telescope/templates-repository'
+  #   file: 'gitlab-ci/includes/finaliser.gitlab-ci.yml'
 
 python-lint:
   before_script:
