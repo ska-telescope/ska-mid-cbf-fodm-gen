@@ -22,7 +22,8 @@ endforeach()
 # Specify the libraries for all targets
 ################################################################################
 link_libraries( 
-  ${CONAN_LIBS}
+  boost::math
+	boost::multiprecision
   ${CMAKE_DL_LIBS}
 )
 message( STATUS "${PROJECT_NAME}: Defined linked library list for src targets..." )
@@ -30,6 +31,10 @@ message( STATUS "${PROJECT_NAME}: Defined linked library list for src targets...
 if ( CMAKE_BUILD_TYPE MATCHES Debug )
 	# enable_testing()
 	# include(GoogleTest)
+	link_libraries( 
+    GTest::gtest_main
+    GTest::gtest
+	)
 	add_subdirectory( test )
 endif()
 
