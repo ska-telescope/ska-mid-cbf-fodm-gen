@@ -74,9 +74,8 @@ cpp-build:
       fi;
 
       echo "Installing with poetry";
-      time poetry install --all-extras;
+      time poetry install --all-extras --no-root;
   script:
-    - poetry install
     - mkdir cpp_build && cd cpp_build
     - poetry run conan install .. --output-folder=. -s build_type=Debug -s compiler.version=11 -s compiler.libcxx="libstdc++11"
     - poetry run cmake .. -DCMAKE_BUILD_TYPE=Debug
