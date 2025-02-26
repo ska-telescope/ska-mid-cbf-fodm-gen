@@ -47,24 +47,35 @@ include:
   # - project: 'ska-telescope/templates-repository'
   #   file: 'gitlab-ci/includes/finaliser.gitlab-ci.yml'
 
-# python-lint:
-#   before_script:
-#     - poetry config virtualenvs.in-project true
-#     - echo "python-build Setting.. poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE"
-#     - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE
-#     - |
-#       if [[ -n $CI_POETRY_VERSION ]] && [[ $(poetry --version) != *$CI_POETRY_VERSION* ]]; then
-#         echo "python-lint: Updating poetry to $CI_POETRY_VERSION";
-#         time pipx upgrade poetry;
-#       fi;
+python-lint:
+  before_script:
+    - poetry config virtualenvs.in-project true
+    - echo "python-build Setting.. poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE"
+    - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE
+    - |
+      if [[ -n $CI_POETRY_VERSION ]] && [[ $(poetry --version) != *$CI_POETRY_VERSION* ]]; then
+        echo "python-lint: Updating poetry to $CI_POETRY_VERSION";
+        time pipx upgrade poetry;
+      fi;
 
-#       echo "python-lint: Installing with poetry";
-#       time poetry install --all-extras;
+      echo "python-lint: Installing with poetry";
+      time poetry install --all-extras;
 
 cpp-build:
   stage: build
+  before_script:
+    - poetry config virtualenvs.in-project true
+    - echo "python-build Setting.. poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE"
+    - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE
+    - |
+      if [[ -n $CI_POETRY_VERSION ]] && [[ $(poetry --version) != *$CI_POETRY_VERSION* ]]; then
+        echo "Updating poetry to $CI_POETRY_VERSION";
+        time pipx upgrade poetry;
+      fi;
+
+      echo "Installing with poetry";
+      time poetry install --all-extras;
   script:
-    - poetry install
     - mkdir cpp_build && cd cpp_build
     - poetry run conan install .. --output-folder=. --settings build_type=Debug --build=gtest
     - poetry run cmake .. -DCMAKE_BUILD_TYPE=Debug
