@@ -24,6 +24,10 @@ endforeach()
 message( STATUS "CONAN_INCLUDE_DIRS: ${CONAN_INCLUDE_DIRS}" )
 message( STATUS "CONAN_LIBS: ${CONAN_LIBS}" )
 message( STATUS "CMAKE_DL_LIBS: ${CMAKE_DL_LIBS}" )
+
+Set(Boost_INSTALL_DIR ${CONAN_BOOST_ROOT})
+find_package(Boost 1.86.0 COMPONENTS math multiprecision REQUIRED)
+
 link_libraries( 
   Boost::math
 	Boost::multiprecision
@@ -35,8 +39,8 @@ if ( CMAKE_BUILD_TYPE MATCHES Debug )
 	# enable_testing()
 	# include(GoogleTest)
 	link_libraries( 
-    GTest::gtest_main
-    GTest::gtest
+    gtest_main
+    gtest
 	)
 	add_subdirectory( test )
 endif()
