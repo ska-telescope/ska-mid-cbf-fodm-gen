@@ -22,6 +22,8 @@ endforeach()
 # Specify the libraries for all targets
 ################################################################################
 message( STATUS "CONAN_INCLUDE_DIRS: ${CONAN_INCLUDE_DIRS}" )
+message( STATUS "CONAN_LIBS: ${CONAN_LIBS}" )
+message( STATUS "CMAKE_DL_LIBS: ${CMAKE_DL_LIBS}" )
 link_libraries( 
   boost::math
 	boost::multiprecision
