@@ -26,11 +26,10 @@ message( STATUS "CONAN_LIBS: ${CONAN_LIBS}" )
 message( STATUS "CMAKE_DL_LIBS: ${CMAKE_DL_LIBS}" )
 
 Set(Boost_INSTALL_DIR ${CONAN_BOOST_ROOT})
-find_package(Boost 1.86.0 COMPONENTS math multiprecision REQUIRED)
+find_package(Boost 1.79.0)
+include_directories(${Boost_INCLUDE_DIRS})
 
-link_libraries( 
-  Boost::math
-	Boost::multiprecision
+link_libraries(
   ${CMAKE_DL_LIBS}
 )
 message( STATUS "${PROJECT_NAME}: Defined linked library list for src targets..." )
