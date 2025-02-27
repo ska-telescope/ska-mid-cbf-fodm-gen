@@ -36,7 +36,7 @@ message( STATUS "${PROJECT_NAME}: Defined linked library list for src targets...
 
 if ( CMAKE_BUILD_TYPE MATCHES Debug )
 	enable_testing()
-	# include(GoogleTest)
+	include(GoogleTest)
 	link_libraries( 
     gtest_main
     gtest
