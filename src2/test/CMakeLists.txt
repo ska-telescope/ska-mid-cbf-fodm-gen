@@ -50,6 +50,7 @@ add_library( ${TEST_TARGET_OBJ} OBJECT ${TEST_TARGET_SRCS} )
 target_include_directories( ${TEST_TARGET_OBJ}
 	PUBLIC
 	${CONAN_INCLUDE_DIRS}
+	${PROJECT_SOURCE_DIR}
 	${PROJECT_SOURCE_DIR}/src
 	${PROJECT_SOURCE_DIR}/src/test/
 	)
@@ -68,10 +69,10 @@ endforeach()
 message(STATUS "${PROJECT_NAME}: Creating test executable ${TEST_TARGET_BIN}" )
 add_executable( ${TEST_TARGET_BIN} $<TARGET_OBJECTS:${TEST_TARGET_OBJ}> )
 
-add_test( NAME ${PROJECT_NAME}_test
-	COMMAND ${CMAKE_BINARY_DIR}/bin/${TEST_TARGET_BIN} --gtest_output=xml:${CMAKE_BINARY_DIR}/report.xml 
-	WORKING_DIRECTORY ${TEST_WORKDIR} 
-)
+# add_test( NAME ${PROJECT_NAME}_test
+# 	COMMAND ${CMAKE_BINARY_DIR}/bin/${TEST_TARGET_BIN} --gtest_output=xml:${CMAKE_BINARY_DIR}/report.xml 
+# 	WORKING_DIRECTORY ${TEST_WORKDIR} 
+# )
 
 ################################################################################
 # Specify instrumented test library
@@ -89,7 +90,7 @@ set_target_properties( ${TEST_TARGET_BIN} ${TEST_TARGET_LIB} ${TEST_TARGET_OBJ}
 )
 
 # Link test executable against gtest & gtest_main
-target_link_libraries(${TEST_TARGET_RUN} ${TEST_TARGET_BIN})
+target_link_libraries(${TEST_TARGET_BIN} gtest_main)
 
 message(STATUS "${PROJECT_NAME}: Linked libraries for test targets" )
 get_target_property( LINKED_LIBS ${TEST_TARGET_BIN} LINK_LIBRARIES )
@@ -103,3 +104,5 @@ endforeach()
 
 configure_file(${PROJECT_SOURCE_DIR}/src/test/fodm_calc_ref.py ${TEST_WORKDIR}/. COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/src/test/fodm_test_input.csv ${TEST_WORKDIR}/. COPYONLY)
+
+gtest_discover_tests(${TEST_TARGET_BIN})

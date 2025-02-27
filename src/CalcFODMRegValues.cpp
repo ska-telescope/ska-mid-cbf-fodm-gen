@@ -5,6 +5,8 @@
 #include <boost/math/special_functions/round.hpp>
 using namespace boost::multiprecision;
 
+#include <iostream> // TODO: REMOVE
+
 namespace ska_mid_cbf_fodm_gen
 {
 
@@ -73,12 +75,13 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   //             Note: typically T0 = ho_start, but in general it does not need 
   //             to be; however, there might be an implicit assumption that 
   //             T0 = ho_start.
+  const cpp_bin_float_50 S_TO_MS(1000);
   
   // FO polynomial start/stop time, measured from the SKA Epoch (in seconds):
-  cpp_bin_float_50 start_ts_s  = fo_poly.start_time_s;
-  cpp_bin_float_50 stop_ts_s   = fo_poly.stop_time_s;
+  cpp_bin_float_50 start_ts_s  = fo_poly.start_time_ms / S_TO_MS;
+  cpp_bin_float_50 stop_ts_s   = fo_poly.stop_time_ms / S_TO_MS;
   // FO polynomial start time, measured from the start of the HO poly from which this FO has been derived (in seconds):
-  cpp_bin_float_50 ho_start_ts_s = fo_poly.ho_poly_start_time_s;
+  cpp_bin_float_50 ho_start_ts_s = fo_poly.ho_poly_start_time_ms / S_TO_MS;
 
   // Renaming, for readability:
   cpp_bin_float_50 fo_delay_linear   = NS_TO_SECONDS(fo_poly.poly[0]); // nondimensional
@@ -108,13 +111,15 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   // the output sample closest to the FO poly start time
   cpp_bin_float_50  current_output_timestamp_samples = floor(output_timestamp_samples_f);
 
+  cpp_bin_float_50 next_output_timestamp_samples = cpp_bin_float_50(floor(stop_ts_s * output_sample_rate_f));
+
   // FO validity interval (measured in output samples)
   // Note: implicit assumption that the FO polynomial validity intervals do
   //       not overlap; currently this assumption holds true. (Otherwise, the 
   //       definition of the validity interval FPGA register would imply that 
   //       samples in the overlap would be output twice.)
   cpp_bin_float_50  validity_interval_samples = 
-    cpp_bin_float_50(floor(stop_ts_s * output_sample_rate_f)) - current_output_timestamp_samples;
+    next_output_timestamp_samples - current_output_timestamp_samples;
 
   // As an extra refinement, remove a v. small amount of delay, so that to hit 
   // zero resampling error in the middle of the FODM instead of only at the end
@@ -212,12 +217,27 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   int64_t phase_linear_scaled = static_cast<int64_t>(round(phase_linear * pow(2, 63)));
   int32_t phase_constant_scaled = static_cast<int32_t>(round(phase_constant * pow(2, 31)));
 
+  std::cout << std::setprecision(20) 
+    << "start_ts_s = " << start_ts_s << std::endl
+    << "stop_ts_s = " << stop_ts_s << std::endl
+    << "resampling_rate = " << resampling_rate << std::endl
+    << "delay_linear = " << delay_linear << std::endl
+    << "delay_constant = " << delay_constant << std::endl
+    << "current_output_timestamp_samples = " << current_output_timestamp_samples << std::endl
+    << "next_output_timestamp_samples = " << next_output_timestamp_samples << std::endl
+    << "validity_interval_samples = " << validity_interval_samples << std::endl
+    << "delay_linear_error_samples = " << delay_linear_error_samples << std::endl
+    << "phase_linear_temp = " << phase_linear_temp << std::endl
+    << "phase_constant_temp = " << phase_constant_temp << std::endl 
+    << "-------" << std::endl;
+    
+
   // -------------------------------------------------------------------------
 
   FirstOrderDelayModelsRegisterSet fodm_reg_values;
 
   // First input timestamp. Need to add back the offset in input samples.
-//   buf.last_fo_timestamp_in_buffer = first_input_timestamp_samples_int;
+  //   buf.last_fo_timestamp_in_buffer = first_input_timestamp_samples_int;
   fodm_reg_values.first_input_timestamp = first_input_timestamp_samples_int;
 
   // Delay constant fraction

@@ -34,9 +34,9 @@ void parse_input_csv(
     while(in.read_row(
         data.fo_poly.poly[1],
         data.fo_poly.poly[0],
-        data.fo_poly.start_time_s,
-        data.fo_poly.stop_time_s,
-        data.fo_poly.ho_poly_start_time_s,
+        data.fo_poly.start_time_ms,
+        data.fo_poly.stop_time_ms,
+        data.fo_poly.ho_poly_start_time_ms,
         data.input_sample_rate,
         data.output_sample_rate,
         data.f_wb,

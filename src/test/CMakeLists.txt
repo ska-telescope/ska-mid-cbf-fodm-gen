@@ -13,8 +13,6 @@ set( TEST_WORKDIR "${CMAKE_BINARY_DIR}/src/test" )
 
 message( STATUS "\n-- ${PROJECT_NAME}: Test working directory is ${TEST_WORKDIR}" )
 
-include(CTest)
-
 ################################################################################
 # Source files
 # ------------------------------------------------------------------------------
@@ -34,7 +32,7 @@ endforeach()
 
 link_libraries(
 	${TARGET_LIB}
-  )
+)
 message( STATUS "${PROJECT_NAME}: Defined linked library list for test targets..." )
 
 
@@ -47,12 +45,12 @@ message( STATUS "${PROJECT_NAME}: Defined linked library list for test targets..
 message(STATUS "${PROJECT_NAME}: Creating object library for test target" )
 add_library( ${TEST_TARGET_OBJ} OBJECT ${TEST_TARGET_SRCS} )
 
+target_link_libraries(${TEST_TARGET_OBJ} gtest_main gtest)
 target_include_directories( ${TEST_TARGET_OBJ}
 	PUBLIC
-	${CONAN_INCLUDE_DIRS}
 	${PROJECT_SOURCE_DIR}/src
 	${PROJECT_SOURCE_DIR}/src/test/
-	)
+)
 message( STATUS "${PROJECT_NAME}: Defined include directory list for test targets..." )
 get_property( dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach( src ${dirs})
@@ -67,11 +65,6 @@ endforeach()
 
 message(STATUS "${PROJECT_NAME}: Creating test executable ${TEST_TARGET_BIN}" )
 add_executable( ${TEST_TARGET_BIN} $<TARGET_OBJECTS:${TEST_TARGET_OBJ}> )
-
-add_test( NAME ${PROJECT_NAME}_test
-	COMMAND ${CMAKE_BINARY_DIR}/bin/${TEST_TARGET_BIN} --gtest_output=xml:${CMAKE_BINARY_DIR}/report.xml 
-	WORKING_DIRECTORY ${TEST_WORKDIR} 
-)
 
 ################################################################################
 # Specify instrumented test library
@@ -89,7 +82,7 @@ set_target_properties( ${TEST_TARGET_BIN} ${TEST_TARGET_LIB} ${TEST_TARGET_OBJ}
 )
 
 # Link test executable against gtest & gtest_main
-target_link_libraries(${TEST_TARGET_BIN} GTest::gtest_main)
+target_link_libraries(${TEST_TARGET_BIN} gtest_main gtest)
 
 message(STATUS "${PROJECT_NAME}: Linked libraries for test targets" )
 get_target_property( LINKED_LIBS ${TEST_TARGET_BIN} LINK_LIBRARIES )

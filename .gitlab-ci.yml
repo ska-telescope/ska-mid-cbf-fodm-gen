@@ -76,10 +76,13 @@ cpp-build:
       echo "Installing with poetry";
       time poetry install --all-extras --no-root;
   script:
+    - apt install libboost-all-dev
     - mkdir cpp_build && cd cpp_build
-    - poetry run conan install .. --output-folder=. -s build_type=Debug -s compiler.version=11 -s compiler.libcxx="libstdc++11"
-    - poetry run cmake .. -DCMAKE_BUILD_TYPE=Debug
-    - poetry run cmake --build .
+    # - poetry run conan install .. --output-folder=. -s build_type=Debug -s compiler.version=11 -s compiler.libcxx="libstdc++11"
+    # - poetry run cmake .. -DCMAKE_BUILD_TYPE=Debug
+    # - poetry run cmake --build .
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug
+    - cmake --build .
   artifacts:
     name: "$CI_COMMIT_REF_NAME-build"
     paths:
@@ -90,7 +93,7 @@ cpp-test:
   stage: test
   script:
     - cd cpp_build && mkdir reports
-    - ctest --output-on-failure --force-new-ctest-process --output-junit reports/unit-tests.xml
+    - ctest --test-dir src --output-on-failure --force-new-ctest-process --output-junit reports/unit-tests.xml
   artifacts:
     paths:
       - cpp_build/

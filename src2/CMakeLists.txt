@@ -25,8 +25,8 @@ message( STATUS "CONAN_INCLUDE_DIRS: ${CONAN_INCLUDE_DIRS}" )
 message( STATUS "CONAN_LIBS: ${CONAN_LIBS}" )
 message( STATUS "CMAKE_DL_LIBS: ${CMAKE_DL_LIBS}" )
 
-Set(Boost_INSTALL_DIR ${CONAN_BOOST_ROOT})
-find_package(Boost 1.79.0)
+Set(Boost_INSTALL_DIR /usr/include/boost)
+find_package(Boost 1.74.0)
 include_directories(${Boost_INCLUDE_DIRS})
 
 link_libraries(
@@ -36,7 +36,7 @@ message( STATUS "${PROJECT_NAME}: Defined linked library list for src targets...
 
 if ( CMAKE_BUILD_TYPE MATCHES Debug )
 	enable_testing()
-	# include(GoogleTest)
+	include(GoogleTest)
 	link_libraries( 
     gtest_main
     gtest
