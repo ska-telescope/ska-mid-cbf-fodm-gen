@@ -89,7 +89,7 @@ set_target_properties( ${TEST_TARGET_BIN} ${TEST_TARGET_LIB} ${TEST_TARGET_OBJ}
 )
 
 # Link test executable against gtest & gtest_main
-target_link_libraries(${TEST_TARGET_BIN} GTest::gtest_main)
+target_link_libraries(${TEST_TARGET_RUN} ${TEST_TARGET_BIN})
 
 message(STATUS "${PROJECT_NAME}: Linked libraries for test targets" )
 get_target_property( LINKED_LIBS ${TEST_TARGET_BIN} LINK_LIBRARIES )
@@ -103,5 +103,3 @@ endforeach()
 
 configure_file(${PROJECT_SOURCE_DIR}/src/test/fodm_calc_ref.py ${TEST_WORKDIR}/. COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/src/test/fodm_test_input.csv ${TEST_WORKDIR}/. COPYONLY)
-
-gtest_discover_tests(${TEST_TARGET_BIN})
