@@ -10,7 +10,7 @@ target_include_directories( fodm_test
 )
 target_link_libraries(
   fodm_test
-  GTest::gtest_main
+  gtest_main
 )
 
 gtest_discover_tests(fodm_test)
