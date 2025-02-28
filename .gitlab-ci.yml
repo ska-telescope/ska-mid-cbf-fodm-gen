@@ -110,6 +110,8 @@ cpp-build-for-release:
 
 cpp-test:
   stage: test
+  dependencies: 
+    - cpp-build-for-test
   script:
     - make cpp-test
   artifacts:
@@ -125,7 +127,7 @@ cpp-publish:
     - .poetry-conan
   stage: publish
   dependencies: 
-    - cpp-build
+    - cpp-build-for-release
     - cpp-test
   only:
     - main
