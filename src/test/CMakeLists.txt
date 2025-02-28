@@ -46,11 +46,20 @@ message(STATUS "${PROJECT_NAME}: Creating object library for test target" )
 add_library( ${TEST_TARGET_OBJ} OBJECT ${TEST_TARGET_SRCS} )
 
 target_link_libraries(${TEST_TARGET_OBJ} gtest_main gtest)
-target_include_directories( ${TEST_TARGET_OBJ}
-	PUBLIC
-	${PROJECT_SOURCE_DIR}/src
-	${PROJECT_SOURCE_DIR}/src/test/
-)
+if (use_conan)
+	target_include_directories( ${TEST_TARGET_OBJ}
+		PUBLIC
+		${CONAN_INCLUDE_DIRS}
+		${PROJECT_SOURCE_DIR}/src
+		${PROJECT_SOURCE_DIR}/src/test/
+	)
+else()
+	target_include_directories( ${TEST_TARGET_OBJ}
+		PUBLIC
+		${PROJECT_SOURCE_DIR}/src
+		${PROJECT_SOURCE_DIR}/src/test/
+	)
+endif()
 message( STATUS "${PROJECT_NAME}: Defined include directory list for test targets..." )
 get_property( dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach( src ${dirs})

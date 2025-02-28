@@ -15,7 +15,27 @@ PYTHON_VARS_AFTER_PYTEST = --forked
 
 PYTHON_TEST_FILE = ./python/tests/
 
+USE_CONAN=true
+
 include .make/*.mk
+
+cpp-build:
+	mkdir -p build && cd build; \
+	if [[ -n $(USE_CONAN) ]] && [[ $(USE_CONAN) = "true" ]]; then \
+		poetry run conan install .. --output-folder=. -s build_type=Debug -s compiler.version=11 -s compiler.libcxx="libstdc++11"; \
+		poetry run cmake .. -DCMAKE_BUILD_TYPE=Debug -Duse_conan=true; \
+		poetry run cmake --build .; \
+	else \
+		cmake .. -DCMAKE_BUILD_TYPE=Debug -Duse_conan=false; \
+		cmake --build .; \
+	fi;
+
+cpp-test:
+	cd build && mkdir -p reports; \
+	ctest --test-dir src --output-on-failure --force-new-ctest-process --output-junit reports/unit-tests.xml
+
+cpp-clean:
+	rm -rf ./build
 
 format-python:
 	$(POETRY_PYTHON_RUNNER) isort --profile black --line-length $(PYTHON_LINE_LENGTH) $(PYTHON_SWITCHES_FOR_ISORT) $(PYTHON_LINT_TARGET)

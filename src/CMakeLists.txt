@@ -1,17 +1,20 @@
-include(FetchContent)
-if ( CMAKE_BUILD_TYPE MATCHES Debug )
-  # gtest w/o conan
-  FetchContent_Declare(
-    googletest
-    URL https://github.com/google/googletest/archive/refs/tags/v1.16.0.zip
-  )
-  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-  FetchContent_MakeAvailable(googletest)
+if (NOT use_conan)
+	include(FetchContent)
+	if ( CMAKE_BUILD_TYPE MATCHES Debug )
+		# gtest w/o conan
+		FetchContent_Declare(
+			googletest
+			URL https://github.com/google/googletest/archive/refs/tags/v1.16.0.zip
+		)
+		set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+		FetchContent_MakeAvailable(googletest)
+		include_directories(${gtest_build_include_dirs})
+	endif()
 endif()
 
 Set(Boost_INCLUDE_DIR /usr/include)
 find_package(Boost 1.74.0)
-include_directories(${Boost_INCLUDE_DIRS} ${gtest_build_include_dirs})
+include_directories(${Boost_INCLUDE_DIRS})
 
 set( TARGET_OBJ ${PROJECT_NAME}-obj )
 set( TARGET_LIB ${PROJECT_NAME}-lib )
@@ -54,11 +57,20 @@ endif()
 message(STATUS "${PROJECT_NAME}: Creating object library for src target" )
 add_library( ${TARGET_OBJ} OBJECT ${TARGET_SRCS} )
 
-target_include_directories( ${TARGET_OBJ}
-	PUBLIC
-  /usr/include/boost/
-	${PROJECT_SOURCE_DIR}/src/
-)
+if (use_conan)
+	target_include_directories( ${TARGET_OBJ}
+		PUBLIC
+		/usr/include/boost/
+		${CONAN_INCLUDE_DIRS}
+		${PROJECT_SOURCE_DIR}/src/
+	)
+else()
+	target_include_directories( ${TARGET_OBJ}
+		PUBLIC
+		/usr/include/boost/
+		${PROJECT_SOURCE_DIR}/src/
+	)
+endif()
 message( STATUS "${PROJECT_NAME}: Defined include directory list for src targets..." )
 get_property( dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach( src ${dirs})

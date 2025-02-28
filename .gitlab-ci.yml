@@ -23,6 +23,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   MINIKUBE: "false"
   CI_POETRY_VERSION: "2.0.1"
+  USE_CONAN: "true"
 
 # Include CI templates
 include:
@@ -63,40 +64,35 @@ include:
 
 cpp-build:
   stage: build
-  # before_script:
-  #   - poetry config virtualenvs.in-project true
-  #   - echo "python-build Setting.. poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE"
-  #   - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE
-  #   - |
-  #     if [[ -n $CI_POETRY_VERSION ]] && [[ $(poetry --version) != *$CI_POETRY_VERSION* ]]; then
-  #       echo "Updating poetry to $CI_POETRY_VERSION";
-  #       time pipx upgrade poetry;
-  #     fi;
-
-  #     echo "Installing with poetry";
-  #     time poetry install --all-extras --no-root;
+  before_script:
+    - |
+      if [[ -n $USE_CONAN ]] && [[ $USE_CONAN = "true" ]]; then
+        poetry config virtualenvs.in-project true;
+        echo "python-build Setting.. poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE";
+        poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE;
+        if [[ -n $CI_POETRY_VERSION ]] && [[ $(poetry --version) != *$CI_POETRY_VERSION* ]]; then
+          echo "Updating poetry to $CI_POETRY_VERSION";
+          time pipx upgrade poetry;
+        fi;
+        echo "Installing with poetry";
+        time poetry install --all-extras --no-root;
+      fi;
   script:
     - apt-get update && apt-get install -y libboost-all-dev
-    - mkdir cpp_build && cd cpp_build
-    # - poetry run conan install .. --output-folder=. -s build_type=Debug -s compiler.version=11 -s compiler.libcxx="libstdc++11"
-    # - poetry run cmake .. -DCMAKE_BUILD_TYPE=Debug
-    # - poetry run cmake --build .
-    - cmake .. -DCMAKE_BUILD_TYPE=Debug
-    - cmake --build .
+    - make cpp-build USE_CONAN=$USE_CONAN
   artifacts:
     name: "$CI_COMMIT_REF_NAME-build"
     paths:
-      - cpp_build/*
+      - build/*
     expire_in: 1 d
 
 cpp-test:
   stage: test
   script:
-    - cd cpp_build && mkdir reports
-    - ctest --test-dir src --output-on-failure --force-new-ctest-process --output-junit reports/unit-tests.xml
+    - make cpp-test
   artifacts:
     paths:
-      - cpp_build/
+      - build/
     reports:
-      junit: cpp_build/reports/unit-tests.xml
+      junit: build/reports/unit-tests.xml
 
