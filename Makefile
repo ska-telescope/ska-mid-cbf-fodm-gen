@@ -1,5 +1,7 @@
 -include PrivateRules.mak
 
+PROJECT_NAME=ska-mid-cbf-fodm-gen
+
 # W503: "Line break before binary operator." Disabled to work around a bug in flake8 where currently both "before" and "after" are disallowed.
 PYTHON_SWITCHES_FOR_FLAKE8 = --ignore=DAR201,W503,E731
 
@@ -19,23 +21,33 @@ USE_CONAN=true
 
 include .make/*.mk
 
+cpp-build-for-test:
+	make cpp-build CPP_BUILD_DIR=build_for_test CMAKE_BUILD_TYPE=Debug
+
+cpp-build-for-release:
+	make cpp-build CPP_BUILD_DIR=build_for_release CMAKE_BUILD_TYPE=Release
+
+cpp-build: CPP_BUILD_DIR=build
+cpp-build: CMAKE_BUILD_TYPE=Debug
 cpp-build:
-	mkdir -p build && cd build; \
+	mkdir -p $(CPP_BUILD_DIR) && cd $(CPP_BUILD_DIR); \
 	if [[ -n $(USE_CONAN) ]] && [[ $(USE_CONAN) = "true" ]]; then \
-		poetry run conan install .. --output-folder=. -s build_type=Debug -s compiler.version=11 -s compiler.libcxx="libstdc++11"; \
-		poetry run cmake .. -DCMAKE_BUILD_TYPE=Debug -Duse_conan=true; \
+		poetry run conan install .. --output-folder=. -s build_type=$(CMAKE_BUILD_TYPE) -s compiler.version=11 -s compiler.libcxx="libstdc++11"; \
+		poetry run cmake .. -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) -Duse_conan=true; \
 		poetry run cmake --build .; \
 	else \
-		cmake .. -DCMAKE_BUILD_TYPE=Debug -Duse_conan=false; \
+		cmake .. -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) -Duse_conan=false; \
 		cmake --build .; \
 	fi;
 
 cpp-test:
-	cd build && mkdir -p reports; \
+	@if [ ! -d ./build_for_test ]; then echo "Directory 'build_for_test' does not exist. Ensure 'make cpp-build-for-test' has been run first."; exit 1; fi;
+	cd build_for_test && mkdir -p reports; \
 	ctest --test-dir src --output-on-failure --force-new-ctest-process --output-junit reports/unit-tests.xml
 
 cpp-clean:
-	rm -rf ./build
+	rm -rf ./build_for_test
+	rm -rf ./build_for_release
 
 format-python:
 	$(POETRY_PYTHON_RUNNER) isort --profile black --line-length $(PYTHON_LINE_LENGTH) $(PYTHON_SWITCHES_FOR_ISORT) $(PYTHON_LINT_TARGET)

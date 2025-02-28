@@ -15,3 +15,5 @@ conanbuildinfo.*
 conaninfo.*
 graph_info.json
 cpp_build
+build_for_test
+build_for_release
