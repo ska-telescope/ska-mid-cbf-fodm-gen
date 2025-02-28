@@ -5,7 +5,9 @@
 #include <boost/math/special_functions/round.hpp>
 using namespace boost::multiprecision;
 
-#include <iostream> // TODO: REMOVE
+ // TODO: REMOVE
+#include <iostream>
+#include <iomanip>
 
 namespace ska_mid_cbf_fodm_gen
 {
@@ -17,6 +19,10 @@ namespace ska_mid_cbf_fodm_gen
 
 cpp_bin_float_50 NS_TO_SECONDS(cpp_bin_float_50 ns) {
   return ns / cpp_bin_float_50(1000000000);
+}
+
+cpp_bin_float_50 MS_TO_SECONDS(cpp_bin_float_50 ms) {
+  return ms / cpp_bin_float_50(1000);
 }
 
 cpp_bin_float_50 mod_pmhalf(cpp_bin_float_50 val)
@@ -75,13 +81,13 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   //             Note: typically T0 = ho_start, but in general it does not need 
   //             to be; however, there might be an implicit assumption that 
   //             T0 = ho_start.
-  const cpp_bin_float_50 S_TO_MS(1000);
-  
-  // FO polynomial start/stop time, measured from the SKA Epoch (in seconds):
-  cpp_bin_float_50 start_ts_s  = fo_poly.start_time_ms / S_TO_MS;
-  cpp_bin_float_50 stop_ts_s   = fo_poly.stop_time_ms / S_TO_MS;
+
   // FO polynomial start time, measured from the start of the HO poly from which this FO has been derived (in seconds):
-  cpp_bin_float_50 ho_start_ts_s = fo_poly.ho_poly_start_time_ms / S_TO_MS;
+  cpp_bin_float_50 ho_start_ts_s = MS_TO_SECONDS(fo_poly.ho_poly_start_time_ms);
+  
+  // FO polynomial start/stop time, measured from the SKA epoch
+  cpp_bin_float_50 start_ts_s  = MS_TO_SECONDS(fo_poly.start_time_ms);
+  cpp_bin_float_50 stop_ts_s   = MS_TO_SECONDS(fo_poly.stop_time_ms);
 
   // Renaming, for readability:
   cpp_bin_float_50 fo_delay_linear   = NS_TO_SECONDS(fo_poly.poly[0]); // nondimensional
@@ -100,16 +106,15 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   // Calculate delay_linear_scaled here, since it is required in the
   // delay_linear_error_samples calculation below:
   // Need to be cast to int before writing to the register
-  using boost::math::round;
+  // using boost::math::round;
   cpp_bin_float_50 delay_linear_scaled = round(delay_linear * pow(2, 63));
-
 
   // Calculate output_timestamp_samples_f,  used to populate the 
   // first_output_timestamp FPGA register field:
   cpp_bin_float_50 output_timestamp_samples_f = output_sample_rate_f * start_ts_s; 
 
   // the output sample closest to the FO poly start time
-  cpp_bin_float_50  current_output_timestamp_samples = floor(output_timestamp_samples_f);
+  cpp_bin_float_50 current_output_timestamp_samples = floor(output_timestamp_samples_f);
 
   cpp_bin_float_50 next_output_timestamp_samples = cpp_bin_float_50(floor(stop_ts_s * output_sample_rate_f));
 
@@ -124,8 +129,11 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   // As an extra refinement, remove a v. small amount of delay, so that to hit 
   // zero resampling error in the middle of the FODM instead of only at the end
   // giving an overall positive delay error.
+  cpp_bin_float_50 delay_linear_unscaled = delay_linear_scaled * cpp_bin_float_50(pow(2,-63));
   cpp_bin_float_50 delay_linear_error_samples = 
-    (delay_linear_scaled * cpp_bin_float_50(pow(2,-63)) - delay_linear) * validity_interval_samples;
+    delay_linear_unscaled * validity_interval_samples - delay_linear * validity_interval_samples;
+  // cpp_bin_float_50 delay_linear_error_samples = 
+  //   (delay_linear_scaled * cpp_bin_float_50(pow(2,-63)) - delay_linear) * validity_interval_samples;
  
   #ifdef DISABLE_DELAY_LINEAR_ERROR
     cpp_bin_float_50 delay_constant_input_samps =  fo_delay_constant * input_sample_rate_f;
@@ -177,6 +185,7 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   // Note that the 2*PI factor from R1 eq. 4, 5 is not applied here, nor the 
   // mod(*, 2*PI) for phase_constant:
   cpp_bin_float_50 f_ds_offset = cpp_bin_float_50(freq_wb_shift - freq_down_shift);
+  cpp_bin_float_50 f_ds_delay_linear_temp = f_ds_offset * fo_delay_linear;
   cpp_bin_float_50 phase_linear_temp = 
     (cpp_bin_float_50(freq_scfo_shift + freq_align_shift) + 
     f_ds_offset * fo_delay_linear) / output_sample_rate_f;
@@ -217,19 +226,25 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   int64_t phase_linear_scaled = static_cast<int64_t>(round(phase_linear * pow(2, 63)));
   int32_t phase_constant_scaled = static_cast<int32_t>(round(phase_constant * pow(2, 31)));
 
-  std::cout << std::setprecision(20) 
-    << "start_ts_s = " << start_ts_s << std::endl
-    << "stop_ts_s = " << stop_ts_s << std::endl
-    << "resampling_rate = " << resampling_rate << std::endl
-    << "delay_linear = " << delay_linear << std::endl
-    << "delay_constant = " << delay_constant << std::endl
-    << "current_output_timestamp_samples = " << current_output_timestamp_samples << std::endl
-    << "next_output_timestamp_samples = " << next_output_timestamp_samples << std::endl
-    << "validity_interval_samples = " << validity_interval_samples << std::endl
-    << "delay_linear_error_samples = " << delay_linear_error_samples << std::endl
-    << "phase_linear_temp = " << phase_linear_temp << std::endl
-    << "phase_constant_temp = " << phase_constant_temp << std::endl 
-    << "-------" << std::endl;
+  // std::cout << std::setprecision(26) 
+  //   << "start_ts_s = " << start_ts_s << std::endl
+  //   << "stop_ts_s = " << stop_ts_s << std::endl
+  //   << "fo_delay_linear = " << fo_delay_linear << std::endl
+  //   << "fo_delay_constant = " << fo_delay_constant << std::endl
+  //   << "delay_linear = " << delay_linear << std::endl
+  //   << "delay_constant = " << delay_constant << std::endl
+  //   << "current_output_timestamp_samples = " << current_output_timestamp_samples << std::endl
+  //   << "next_output_timestamp_samples = " << next_output_timestamp_samples << std::endl
+  //   << "validity_interval_samples = " << validity_interval_samples << std::endl
+  //   << "delay_linear_scaled = " << delay_linear_scaled << std::endl
+  //   << "delay_linear_unscaled = " << delay_linear_unscaled << std::endl
+  //   << "delay_linear_error_samples = " << delay_linear_error_samples << std::endl
+  //   << "f_ds_delay_linear_temp = " << f_ds_delay_linear_temp << std::endl
+  //   << "phase_linear_temp = " << phase_linear_temp << std::endl
+  //   << "phase_constant_temp = " << phase_constant_temp << std::endl 
+  //   << "phase_linear_mod = " << phase_linear << std::endl
+  //   << "phase_constant_mod = " << phase_constant << std::endl 
+  //   << "-------" << std::endl;
     
 
   // -------------------------------------------------------------------------

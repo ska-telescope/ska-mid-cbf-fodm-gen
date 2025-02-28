@@ -37,9 +37,9 @@ def fodm_calc_ref(test_input_csv, output_csv):
 
             fo_delay_const = Decimal(row['fo_delay_const']) / Decimal(1e9)
             fo_delay_linear = Decimal(row['fo_delay_linear']) / Decimal(1e9)
+            hodm_start_t = Decimal(row['hodm_start_t']) / Decimal(1e3)
             fodm_start_t = Decimal(row['fodm_start_t']) / Decimal(1e3)
             fodm_stop_t = Decimal(row['fodm_stop_t']) / Decimal(1e3)
-            hodm_start_t = Decimal(row['hodm_start_t']) / Decimal(1e3)
             input_sample_rate = row['input_sample_rate']
             output_sample_rate = row['output_sample_rate']
             f_wb = row['f_wb']
@@ -82,7 +82,6 @@ def fodm_calc_ref(test_input_csv, output_csv):
             delay_linear_error_samples = (
                 (Decimal(delay_linear_int) * Decimal(2**-63)) - delay_linear
             ) * fodm_output_samples
-            # print(delay_linear, Decimal(delay_linear_int) * Decimal(2**-31),  fodm_output_samples , delay_linear_error/2 * 2**32)
 
             delay_const_input_samples = (
                 (Decimal(fo_delay_const)) * isr
@@ -132,25 +131,34 @@ def fodm_calc_ref(test_input_csv, output_csv):
                 fo_delay_const
                 # Correct for the phase added by the VCC due to the as yet uncorrected delay.
             )
-
-            print(f"start_ts_s = {fodm_start_t}")
-            print(f"stop_ts_s = {fodm_stop_t}")
-            print(f"resampling_rate = {resampling_rate}")
-            print(f"delay_linear = {delay_linear}")
-            print(f"delay_constant = {delay_const}")
-            print(f"current_output_timestamp_samples = {current_output_timestamp_samples}")
-            print(f"next_output_timestamp_samples = {next_output_timestamp_samples}")
-            print(f"validity_interval_samples = {fodm_output_samples}")
-            print(f"delay_linear_error_samples = {delay_linear_error_samples}")
-            print(f"phase_linear_temp = {phase_linear}")
-            print(f"phase_constant_temp = {phase_const}")
-            print("---------------")
             
+            phase_const_mod = mod_pmhalf(phase_const)
+            phase_linear_mod = mod_pmhalf(phase_linear)
+            
+            # print(f"start_ts_s = {fodm_start_t}")
+            # print(f"stop_ts_s = {fodm_stop_t}")
+            # print(f"fo_delay_linear = {fo_delay_linear}")
+            # print(f"fo_delay_constant = {fo_delay_const}")
+            # print(f"delay_linear = {delay_linear}")
+            # print(f"delay_constant = {delay_const}")
+            # print(f"current_output_timestamp_samples = {current_output_timestamp_samples}")
+            # print(f"next_output_timestamp_samples = {next_output_timestamp_samples}")
+            # print(f"validity_interval_samples = {fodm_output_samples}")
+            # print(f"delay_linear_int = {delay_linear_int}")
+            # print(f"delay_linear_unscaled = {delay_linear_unscaled}")            
+            # print(f"delay_linear_error_samples = {delay_linear_error_samples}")
+            # print(f"(F_WB - F_DS) * Decimal(fo_delay_linear) = {(F_WB - F_DS) * Decimal(fo_delay_linear)}")            
+            # print(f"phase_linear_temp = {phase_linear}")
+            # print(f"phase_constant_temp = {phase_const}")
+            # print(f"phase_linear_mod = {phase_linear_mod}" )
+            # print(f"phase_const_mod = {phase_const_mod}" )
+            # print("---------------")
+
             out_row['phase_constant'] = int(
-                round(mod_pmhalf(phase_const) * 2**31)
+                round(phase_const_mod * 2**31)
             )
             out_row['phase_linear'] = int(
-                round(mod_pmhalf(phase_linear) * 2**63)
+                round(phase_linear_mod * 2**63)
             )
             out_row['validity_period'] = int(fodm_output_samples) - 1
 

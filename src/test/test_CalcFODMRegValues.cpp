@@ -3,7 +3,7 @@
 #include "csv.h"
 #include "CalcFODMRegValues.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 using namespace ska_mid_cbf_fodm_gen;
 
