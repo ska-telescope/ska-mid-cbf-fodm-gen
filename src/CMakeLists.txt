@@ -27,9 +27,10 @@ link_libraries(
 )
 message( STATUS "${PROJECT_NAME}: Defined linked library list for src targets..." )
 
-if ( CMAKE_BUILD_TYPE MATCHES Debug )
-	add_subdirectory( test )
-endif()
+# if ( CMAKE_BUILD_TYPE MATCHES Debug )
+# 	add_subdirectory( test )
+# endif()
+add_subdirectory( test )
 
 ################################################################################
 # Configure target object library
