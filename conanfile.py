@@ -39,8 +39,11 @@ class SkaMidCbfFodmGen(ConanFile):
     no_copy_source = True
 
     def requirements(self):
-        # if ( self.settings.build_type == "Debug" ):
-        self.requires("gtest/1.10.0#192bfd9521a002db8d6c94e39aa617a8")
+        # to support multi-precision floating point
+        self.requires("gmp/6.3.0")
+        self.requires("mpfr/4.2.1")
+        if ( self.settings.arch == "x86_64" ):
+            self.requires("gtest/1.10.0#192bfd9521a002db8d6c94e39aa617a8")
 
     def build(self):
         cmake = CMake(self)

@@ -1,35 +1,35 @@
 #include "CalcFODMRegValues.h"
 
 // to support higher precision
-#include <boost/multiprecision/cpp_bin_float.hpp> 
-#include <boost/math/special_functions/round.hpp>
-using namespace boost::multiprecision;
+#include "mpreal.h"
 
- // TODO: REMOVE
-#include <iostream>
-#include <iomanip>
+// // TODO: REMOVE
+// #include <iostream>
+// #include <iomanip>
 
 namespace ska_mid_cbf_fodm_gen
 {
+
+using mpfr::mpreal;
 
 /**
  * Uncomment to not apply the delay_linear_error_samples to delay_constant
  */
 // #define DISABLE_DELAY_LINEAR_ERROR
 
-cpp_bin_float_50 NS_TO_SECONDS(cpp_bin_float_50 ns) {
-  return ns / cpp_bin_float_50(1000000000);
+mpreal NS_TO_SECONDS(mpreal ns) {
+  return ns / mpreal(1000000000);
 }
 
-cpp_bin_float_50 MS_TO_SECONDS(cpp_bin_float_50 ms) {
-  return ms / cpp_bin_float_50(1000);
+mpreal MS_TO_SECONDS(mpreal ms) {
+  return ms / mpreal(1000);
 }
 
-cpp_bin_float_50 mod_pmhalf(cpp_bin_float_50 val)
+mpreal mod_pmhalf(mpreal val)
 {
   // Python version:
   // (((val % Decimal(1)) + Decimal(1.5)) % Decimal(1)) - Decimal(0.5)
-  return fmod((fmod(val,cpp_bin_float_50(1)) + cpp_bin_float_50(1.5)),cpp_bin_float_50(1)) - cpp_bin_float_50(0.5);
+  return fmod((fmod(val,mpreal(1)) + mpreal(1.5)),mpreal(1)) - mpreal(0.5);
 }
 
 
@@ -81,65 +81,66 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   //             Note: typically T0 = ho_start, but in general it does not need 
   //             to be; however, there might be an implicit assumption that 
   //             T0 = ho_start.
+  mpreal::set_default_prec(mpfr::digits2bits(50)); // 50 digits precision
 
   // FO polynomial start time, measured from the start of the HO poly from which this FO has been derived (in seconds):
-  cpp_bin_float_50 ho_start_ts_s = MS_TO_SECONDS(fo_poly.ho_poly_start_time_ms);
+  mpreal ho_start_ts_s = MS_TO_SECONDS(fo_poly.ho_poly_start_time_ms);
   
   // FO polynomial start/stop time, measured from the SKA epoch
-  cpp_bin_float_50 start_ts_s  = MS_TO_SECONDS(fo_poly.start_time_ms);
-  cpp_bin_float_50 stop_ts_s   = MS_TO_SECONDS(fo_poly.stop_time_ms);
+  mpreal start_ts_s  = MS_TO_SECONDS(fo_poly.start_time_ms);
+  mpreal stop_ts_s   = MS_TO_SECONDS(fo_poly.stop_time_ms);
 
   // Renaming, for readability:
-  cpp_bin_float_50 fo_delay_linear   = NS_TO_SECONDS(fo_poly.poly[0]); // nondimensional
-  cpp_bin_float_50 fo_delay_constant = NS_TO_SECONDS(fo_poly.poly[1]); // [s]
+  mpreal fo_delay_linear   = NS_TO_SECONDS(fo_poly.poly[0]); // nondimensional
+  mpreal fo_delay_constant = NS_TO_SECONDS(fo_poly.poly[1]); // [s]
 
   // Calculate the 'double' version of the FPGA register fields
   // delay_linear and delay_constant (measured in samples):
 
   // Note correction of delay_linear w.r.t. the previous version, to agree with
   // the json file definition:
-  cpp_bin_float_50 input_sample_rate_f(input_sample_rate);
-  cpp_bin_float_50 output_sample_rate_f(output_sample_rate);
-  cpp_bin_float_50 resampling_rate = input_sample_rate_f / output_sample_rate_f;
-  cpp_bin_float_50 delay_linear   = resampling_rate * (fo_delay_linear + 1);
+  mpreal input_sample_rate_f(input_sample_rate);
+  mpreal output_sample_rate_f(output_sample_rate);
+  mpreal resampling_rate = input_sample_rate_f / output_sample_rate_f;
+  mpreal delay_linear   = resampling_rate * (fo_delay_linear + 1);
 
   // Calculate delay_linear_scaled here, since it is required in the
   // delay_linear_error_samples calculation below:
   // Need to be cast to int before writing to the register
   // using boost::math::round;
-  cpp_bin_float_50 delay_linear_scaled = round(delay_linear * pow(2, 63));
+  mpreal delay_linear_scaled = round(delay_linear * pow(2, 63));
 
   // Calculate output_timestamp_samples_f,  used to populate the 
   // first_output_timestamp FPGA register field:
-  cpp_bin_float_50 output_timestamp_samples_f = output_sample_rate_f * start_ts_s; 
+  mpreal output_timestamp_samples_f = output_sample_rate_f * start_ts_s; 
 
   // the output sample closest to the FO poly start time
-  cpp_bin_float_50 current_output_timestamp_samples = floor(output_timestamp_samples_f);
+  mpreal current_output_timestamp_samples = floor(output_timestamp_samples_f);
 
-  cpp_bin_float_50 next_output_timestamp_samples = cpp_bin_float_50(floor(stop_ts_s * output_sample_rate_f));
+  mpreal next_output_timestamp_samples = mpreal(floor(stop_ts_s * output_sample_rate_f));
 
   // FO validity interval (measured in output samples)
   // Note: implicit assumption that the FO polynomial validity intervals do
   //       not overlap; currently this assumption holds true. (Otherwise, the 
   //       definition of the validity interval FPGA register would imply that 
   //       samples in the overlap would be output twice.)
-  cpp_bin_float_50  validity_interval_samples = 
+  mpreal  validity_interval_samples = 
     next_output_timestamp_samples - current_output_timestamp_samples;
 
   // As an extra refinement, remove a v. small amount of delay, so that to hit 
   // zero resampling error in the middle of the FODM instead of only at the end
   // giving an overall positive delay error.
-  cpp_bin_float_50 delay_linear_unscaled = delay_linear_scaled * cpp_bin_float_50(pow(2,-63));
-  cpp_bin_float_50 delay_linear_error_samples = 
+  mpreal delay_linear_unscaled = delay_linear_scaled * mpreal(pow(2,-63));
+  mpreal delay_linear_error_samples = 
     delay_linear_unscaled * validity_interval_samples - delay_linear * validity_interval_samples;
-  // cpp_bin_float_50 delay_linear_error_samples = 
-  //   (delay_linear_scaled * cpp_bin_float_50(pow(2,-63)) - delay_linear) * validity_interval_samples;
+  // mpreal delay_linear_error_samples = 
+  //   (delay_linear_scaled * mpreal(pow(2,-63)) - delay_linear) * validity_interval_samples;
  
   #ifdef DISABLE_DELAY_LINEAR_ERROR
-    cpp_bin_float_50 delay_constant_input_samps =  fo_delay_constant * input_sample_rate_f;
+    mpreal delay_constant_input_samps =  fo_delay_constant * input_sample_rate_f;
   #else
       // Apply  /2 to fo_delay_constant (in samps):
-      cpp_bin_float_50 delay_constant_input_samps = 
+      mpreal delay_constant_input_samps = 
         fo_delay_constant * input_sample_rate_f - delay_linear_error_samples / 2;
   #endif
 
@@ -148,13 +149,13 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   // (See the definitions of the first_input_timestamp and delay_constant fields 
   // in the FPGA JSON interface file first_order_delay_models.json.) 
   // This calculation was updated to align with talon_FSP.py in the HW notebooks. 
-  cpp_bin_float_50 current_input_timestamp_samples = resampling_rate * current_output_timestamp_samples;
-  cpp_bin_float_50 first_input_timestamp_fractional_samples = current_input_timestamp_samples + delay_constant_input_samps;
+  mpreal current_input_timestamp_samples = resampling_rate * current_output_timestamp_samples;
+  mpreal first_input_timestamp_fractional_samples = current_input_timestamp_samples + delay_constant_input_samps;
 
   uint64_t first_input_timestamp_samples_int  = static_cast<uint64_t>(first_input_timestamp_fractional_samples);
-  cpp_bin_float_50 delay_constant = first_input_timestamp_fractional_samples - first_input_timestamp_samples_int;
+  mpreal delay_constant = first_input_timestamp_fractional_samples - first_input_timestamp_samples_int;
 
-  cpp_bin_float_50 delay_constant_scaled = round(delay_constant * cpp_bin_float_50(pow(2, 32)));
+  mpreal delay_constant_scaled = round(delay_constant * mpreal(pow(2, 32)));
 
   // -------------------------------------------------------------------------
   // Initialize parameters for First Order Phase Polynomials (FOPP) calculation
@@ -184,10 +185,10 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   // ([R1] eq. 4, 5);
   // Note that the 2*PI factor from R1 eq. 4, 5 is not applied here, nor the 
   // mod(*, 2*PI) for phase_constant:
-  cpp_bin_float_50 f_ds_offset = cpp_bin_float_50(freq_wb_shift - freq_down_shift);
-  cpp_bin_float_50 f_ds_delay_linear_temp = f_ds_offset * fo_delay_linear;
-  cpp_bin_float_50 phase_linear_temp = 
-    (cpp_bin_float_50(freq_scfo_shift + freq_align_shift) + 
+  mpreal f_ds_offset = mpreal(freq_wb_shift - freq_down_shift);
+  mpreal f_ds_delay_linear_temp = f_ds_offset * fo_delay_linear;
+  mpreal phase_linear_temp = 
+    (mpreal(freq_scfo_shift + freq_align_shift) + 
     f_ds_offset * fo_delay_linear) / output_sample_rate_f;
 
   // Calculate the time_factor, as per  [R1] eq. 5:
@@ -205,7 +206,7 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   // TODO: it is unclear why time factor should be relative to the SKA epoch, further 
   // investigation may be needed. 
   //
-  cpp_bin_float_50 time_factor =  start_ts_s; 
+  mpreal time_factor =  start_ts_s; 
 
   bool use_tech_note_kT1_defn = false;
   if (use_tech_note_kT1_defn) {
@@ -215,13 +216,13 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   time_factor = floor(time_factor * output_sample_rate_f);
   
   // Calculate phase_constant_temp (see [R1] eq. 5):
-  cpp_bin_float_50 phase_constant_temp = 
+  mpreal phase_constant_temp = 
     time_factor * phase_linear_temp + 
     f_ds_offset * fo_delay_constant;
   
   // Take mod of phase_linear_temp and phase_constant_temp to get to the final value
-  cpp_bin_float_50 phase_linear   = mod_pmhalf(phase_linear_temp);
-  cpp_bin_float_50 phase_constant = mod_pmhalf(phase_constant_temp); 
+  mpreal phase_linear   = mod_pmhalf(phase_linear_temp);
+  mpreal phase_constant = mod_pmhalf(phase_constant_temp); 
 
   int64_t phase_linear_scaled = static_cast<int64_t>(round(phase_linear * pow(2, 63)));
   int32_t phase_constant_scaled = static_cast<int32_t>(round(phase_constant * pow(2, 31)));
