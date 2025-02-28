@@ -14,7 +14,7 @@ stages:
   - test
 #  - pages
   - publish
-#  - scan
+  - scan
 
 
 
