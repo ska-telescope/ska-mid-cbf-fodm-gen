@@ -40,7 +40,10 @@ class SkaMidCbfFodmGen(ConanFile):
 
     def requirements(self):
         # to support multi-precision floating point
-        self.requires("gmp/6.3.0")
+        # self.requires("boost/1.86.0")
+        # if ( self.settings.arch == "armv8" ):
+        #     self.requires("m4/1.4.19")
+        # self.requires("gmp/6.3.0")
         self.requires("mpfr/4.2.1")
         if ( self.settings.arch == "x86_64" ):
             self.requires("gtest/1.10.0#192bfd9521a002db8d6c94e39aa617a8")
