@@ -25,11 +25,12 @@ cpp-build:
 	rm -rf ./build; mkdir build; \
 	cd ./build; \
 	conan install .. -pr ../profiles/default; \
+	conan build ..
 
 cpp-build-armv8:
 	rm -rf ./build-cross; mkdir build-cross; \
 	cd ./build-cross; \
-	conan install .. -pr:b ../profiles/default -pr:h ../profiles/armv8 --build=missing; \
+	conan install .. -pr:b ../profiles/default -pr:h ../profiles/armv8; \
 	conan build ..
 	
 cpp-test:

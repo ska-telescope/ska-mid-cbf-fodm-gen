@@ -40,20 +40,16 @@ class SkaMidCbfFodmGen(ConanFile):
 
     def requirements(self):
         # to support multi-precision floating point
-        # self.requires("boost/1.86.0")
-        # if ( self.settings.arch == "armv8" ):
-        #     self.requires("m4/1.4.19")
-        # self.requires("gmp/6.3.0")
-        self.requires("mpfr/4.2.1")
+        self.requires("boost/1.81.0")
         if ( self.settings.arch == "x86_64" ):
             self.requires("gtest/1.10.0#192bfd9521a002db8d6c94e39aa617a8")
 
     def build(self):
         cmake = CMake(self)
         if ( self.in_local_cache ):
-            cmake.configure( source_folder=self.source_folder )
+            cmake.configure(defs={"TARGET_ARCH": f"{self.settings.arch}"}, source_folder=self.source_folder )
         else:
-            cmake.configure()
+            cmake.configure(defs={"TARGET_ARCH": f"{self.settings.arch}"})
         cmake.build()
 
     # def build_requirements(self):

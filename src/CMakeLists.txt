@@ -27,10 +27,9 @@ link_libraries(
 )
 message( STATUS "${PROJECT_NAME}: Defined linked library list for src targets..." )
 
-# if ( CMAKE_BUILD_TYPE MATCHES Debug )
-# 	add_subdirectory( test )
-# endif()
-add_subdirectory( test )
+if ( TARGET_ARCH MATCHES Debug )
+	add_subdirectory( test )
+endif()
 
 ################################################################################
 # Configure target object library
@@ -42,7 +41,6 @@ add_library( ${TARGET_OBJ} OBJECT ${TARGET_SRCS} )
 
 target_include_directories( ${TARGET_OBJ}
 	PUBLIC
-    /usr/include/boost/
 	${CONAN_INCLUDE_DIRS}
 	${PROJECT_SOURCE_DIR}/src/
 	)

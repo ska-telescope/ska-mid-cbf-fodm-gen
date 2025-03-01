@@ -11,6 +11,9 @@ compiler.version=7
 compiler.libcxx=libstdc++11
 build_type=Release
 
+[options]
+boost/*:header_only=True
+
 [env]
 CONAN_CMAKE_FIND_ROOT_PATH=$toolchain
 CONAN_CMAKE_SYSROOT=/
