@@ -74,6 +74,8 @@ cpp-build:
 
 cpp-build-armv8:
   stage: build
+  rules:
+    - if: '$CI_COMMIT_TAG'
   before_script:
     - apt-get update && apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
   script:
@@ -105,6 +107,8 @@ cpp-release:
     - cpp-build
     - cpp-build-armv8
     - cpp-test
+  rules:
+    - if: '$CI_COMMIT_TAG'
   script:
     - |
       CONAN_INFO=($(conan info ./conanfile.py -n None));
@@ -116,3 +120,4 @@ cpp-release:
         cd $d;
         conan export-pkg -f .. $CONAN_PKG_NAME/$CONAN_PKG_VERSION@$CONAN_USER_CHANNEL;
       ); done;
+      conan upload --all -r conan-internal $CONAN_PKG_NAME/$CONAN_PKG_VERSION@$CONAN_USER_CHANNEL;
