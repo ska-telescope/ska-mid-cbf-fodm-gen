@@ -23,7 +23,6 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   MINIKUBE: "false"
   CI_POETRY_VERSION: "2.0.1"
-  USE_CONAN: "true"
   CONAN_USER_CHANNEL: "marvin/stable"
 
 # Include CI templates
@@ -63,47 +62,40 @@ include:
 #       echo "python-lint: Installing with poetry";
 #       time poetry install --all-extras;
 
-.poetry-conan:
-  before_script:
-    - |
-      if [[ -n $USE_CONAN ]] && [[ $USE_CONAN = "true" ]]; then
-        poetry config virtualenvs.in-project true;
-        echo "python-build Setting.. poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE";
-        poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE;
-        if [[ -n $CI_POETRY_VERSION ]] && [[ $(poetry --version) != *$CI_POETRY_VERSION* ]]; then
-          echo "Updating poetry to $CI_POETRY_VERSION";
-          time pipx upgrade poetry;
-        fi;
-        echo "Installing with poetry";
-        time poetry install --all-extras --no-root;
-      fi;
-
 cpp-build-for-test:
-  extends: 
-    - .poetry-conan
   stage: build
   script:
-    - apt-get update && apt-get install -y libboost-all-dev
-    - make cpp-build-for-test USE_CONAN=$USE_CONAN
+    - make cpp-build-for-test
   artifacts:
     name: "$CI_COMMIT_REF_NAME-build-for-test"
     paths:
       - build_for_test/*
     expire_in: 1 d
 
-cpp-build-for-release:
-  extends: 
-    - .poetry-conan
+cpp-build-release:
   stage: build
   rules:
     - if: '$CI_COMMIT_TAG'
   script:
-    - apt-get update && apt-get install -y libboost-all-dev
-    - make cpp-build-for-release USE_CONAN=$USE_CONAN
+    - make cpp-build-release
   artifacts:
-    name: "$CI_COMMIT_REF_NAME-build-for-release"
+    name: "$CI_COMMIT_REF_NAME-build"
     paths:
-      - build_for_release/*
+      - build/*
+    expire_in: 1 d
+
+cpp-build-release-armv8:
+  stage: build
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+  script:
+    make cpp-build-release-armv8 
+  artifacts:
+    name: "$CI_COMMIT_REF_NAME-build_cross"
+    paths:
+      - build_cross/*
     expire_in: 1 d
 
 cpp-test:
@@ -121,25 +113,20 @@ cpp-test:
 # Using a custom conan job instead of SKA template, as we don't know if SKA will maintain conan support in the future,
 # however we need conan in this repo at least for now to be able to support the Talon (AA0.5/1) RDT.
 cpp-publish:
-  extends: 
-    - .poetry-conan
   stage: publish
   dependencies: 
-    - cpp-build-for-release
+    - cpp-build-release
+    - cpp-build-release-armv8
     - cpp-test
   rules:
     - if: '$CI_COMMIT_TAG'
   script:
     - |
       cd build_for_release;
-      if [[ -n $(USE_CONAN) ]] && [[ $(USE_CONAN) = "true" ]]; then
-        CONAN_INFO=($(conan info ../conanfile.py -n None));
-        CONAN_PKG_NAME=$(echo ${CONAN_INFO[1]} | awk -F/ '{print $1}' | tr -d "(");
-        CONAN_PKG_VERSION=$(echo ${CONAN_INFO[1]} | awk -F/ '{print $2}' | tr -d ")");
-        poetry run conan remote add conan-internal https://artefact.skao.int/repository/conan-internal/ true;
-        poetry run conan user $CAR_CONAN_USERNAME -p $CAR_CONAN_PASSWORD -r conan-internal
-        poetry run conan export-pkg -f . $CONAN_PKG_NAME/$CONAN_PKG_VERSION@$CONAN_USER_CHANNEL;
-        poetry run conan upload --all -r conan-internal $CONAN_PKG_NAME/$CONAN_PKG_VERSION@$CONAN_USER_CHANNEL;
-      else
-        echo "Publishing raw binaries currently unsupported. May be added later if desired.";
-      fi;
+      CONAN_INFO=($(conan info ../conanfile.py -n None));
+      CONAN_PKG_NAME=$(echo ${CONAN_INFO[1]} | awk -F/ '{print $1}' | tr -d "(");
+      CONAN_PKG_VERSION=$(echo ${CONAN_INFO[1]} | awk -F/ '{print $2}' | tr -d ")");
+      conan remote add conan-internal https://artefact.skao.int/repository/conan-internal/ true;
+      conan user $CAR_CONAN_USERNAME -p $CAR_CONAN_PASSWORD -r conan-internal
+      conan export-pkg -f . $CONAN_PKG_NAME/$CONAN_PKG_VERSION@$CONAN_USER_CHANNEL;
+      conan upload --all -r conan-internal $CONAN_PKG_NAME/$CONAN_PKG_VERSION@$CONAN_USER_CHANNEL;

@@ -5,9 +5,10 @@
 #include <boost/math/special_functions/round.hpp>
 using namespace boost::multiprecision;
 
- // TODO: REMOVE
-#include <iostream>
-#include <iomanip>
+
+// // TODO: REMOVE
+// #include <iostream>
+// #include <iomanip>
 
 namespace ska_mid_cbf_fodm_gen
 {
@@ -107,7 +108,7 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   // delay_linear_error_samples calculation below:
   // Need to be cast to int before writing to the register
   // using boost::math::round;
-  cpp_bin_float_50 delay_linear_scaled = round(delay_linear * pow(2, 63));
+  cpp_bin_float_50 delay_linear_scaled = round(delay_linear * pow(2, 31));
 
   // Calculate output_timestamp_samples_f,  used to populate the 
   // first_output_timestamp FPGA register field:
@@ -129,7 +130,7 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   // As an extra refinement, remove a v. small amount of delay, so that to hit 
   // zero resampling error in the middle of the FODM instead of only at the end
   // giving an overall positive delay error.
-  cpp_bin_float_50 delay_linear_unscaled = delay_linear_scaled * cpp_bin_float_50(pow(2,-63));
+  cpp_bin_float_50 delay_linear_unscaled = delay_linear_scaled * cpp_bin_float_50(pow(2,-31));
   cpp_bin_float_50 delay_linear_error_samples = 
     delay_linear_unscaled * validity_interval_samples - delay_linear * validity_interval_samples;
   // cpp_bin_float_50 delay_linear_error_samples = 
@@ -223,7 +224,7 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   cpp_bin_float_50 phase_linear   = mod_pmhalf(phase_linear_temp);
   cpp_bin_float_50 phase_constant = mod_pmhalf(phase_constant_temp); 
 
-  int64_t phase_linear_scaled = static_cast<int64_t>(round(phase_linear * pow(2, 63)));
+  int32_t phase_linear_scaled = static_cast<int32_t>(round(phase_linear * pow(2, 31)));
   int32_t phase_constant_scaled = static_cast<int32_t>(round(phase_constant * pow(2, 31)));
 
   // std::cout << std::setprecision(26) 
@@ -259,7 +260,7 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   fodm_reg_values.delay_constant = static_cast<uint32_t>(delay_constant_scaled);
 
   // Linear delay ratio
-  fodm_reg_values.delay_linear = (uint64_t)delay_linear_scaled;
+  fodm_reg_values.delay_linear = (uint32_t)delay_linear_scaled;
 
   // Constant part of the FO phase polynomial
   fodm_reg_values.phase_constant = phase_constant_scaled;

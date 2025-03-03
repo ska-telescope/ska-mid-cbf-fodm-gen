@@ -46,20 +46,12 @@ message(STATUS "${PROJECT_NAME}: Creating object library for test target" )
 add_library( ${TEST_TARGET_OBJ} OBJECT ${TEST_TARGET_SRCS} )
 
 target_link_libraries(${TEST_TARGET_OBJ} gtest_main gtest)
-if (use_conan)
-	target_include_directories( ${TEST_TARGET_OBJ}
-		PUBLIC
-		${CONAN_INCLUDE_DIRS}
-		${PROJECT_SOURCE_DIR}/src
-		${PROJECT_SOURCE_DIR}/src/test/
-	)
-else()
-	target_include_directories( ${TEST_TARGET_OBJ}
-		PUBLIC
-		${PROJECT_SOURCE_DIR}/src
-		${PROJECT_SOURCE_DIR}/src/test/
-	)
-endif()
+target_include_directories( ${TEST_TARGET_OBJ}
+	PUBLIC
+	${CONAN_INCLUDE_DIRS}
+	${PROJECT_SOURCE_DIR}/src
+	${PROJECT_SOURCE_DIR}/src/test/
+)
 message( STATUS "${PROJECT_NAME}: Defined include directory list for test targets..." )
 get_property( dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach( src ${dirs})
@@ -103,7 +95,7 @@ endforeach()
 # Copy files to test working directory
 ################################################################################
 
-configure_file(${PROJECT_SOURCE_DIR}/src/test/fodm_calc_ref.py ${TEST_WORKDIR}/. COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/python/fodm_calc_ref.py ${TEST_WORKDIR}/. COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/src/test/fodm_test_input.csv ${TEST_WORKDIR}/. COPYONLY)
 
 gtest_discover_tests(${TEST_TARGET_BIN})

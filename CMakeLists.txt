@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.20)
-option(use_conan "Use Conan" true)
 
 ################################################################################
 # Extract the version information for this library
@@ -27,10 +26,8 @@ project( ${PACKAGE_NAME} VERSION ${RELEASE} )
 set( CMAKE_EXPORT_COMPILE_COMMANDS "ON" )
 message( STATUS "${PROJECT_NAME}: Exporting compile commands..." )
 
-if (use_conan)
-  include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-  conan_basic_setup()
-endif()
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup()
 
 ###############################################################################
 # Set testing flags if required

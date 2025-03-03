@@ -17,28 +17,25 @@ PYTHON_VARS_AFTER_PYTEST = --forked
 
 PYTHON_TEST_FILE = ./python/tests/
 
-USE_CONAN=true
-
 include .make/*.mk
 
 cpp-build-for-test:
 	make cpp-build CPP_BUILD_DIR=build_for_test CMAKE_BUILD_TYPE=Debug
 
-cpp-build-for-release:
-	make cpp-build CPP_BUILD_DIR=build_for_release CMAKE_BUILD_TYPE=Release
+cpp-build-release:
+	make cpp-build CPP_BUILD_DIR=build CMAKE_BUILD_TYPE=Release CONAN_HOST_PROFILE=default
+
+cpp-build-release-armv8:
+	make cpp-build CPP_BUILD_DIR=build_cross CMAKE_BUILD_TYPE=Release CONAN_HOST_PROFILE=armv8
 
 cpp-build: CPP_BUILD_DIR=build
 cpp-build: CMAKE_BUILD_TYPE=Debug
+cpp-build: CONAN_HOST_PROFILE=default
 cpp-build:
 	mkdir -p $(CPP_BUILD_DIR) && cd $(CPP_BUILD_DIR); \
-	if [[ -n $(USE_CONAN) ]] && [[ $(USE_CONAN) = "true" ]]; then \
-		poetry run conan install .. --output-folder=. -s build_type=$(CMAKE_BUILD_TYPE) -s compiler.version=11 -s compiler.libcxx="libstdc++11"; \
-		poetry run cmake .. -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) -Duse_conan=true; \
-		poetry run cmake --build .; \
-	else \
-		cmake .. -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) -Duse_conan=false; \
-		cmake --build .; \
-	fi;
+	conan install .. --output-folder=. -s build_type=$(CMAKE_BUILD_TYPE) -s compiler.version=11 -s compiler.libcxx="libstdc++11" -pr:b ../profiles/default -pr:h ../profiles/$(CONAN_HOST_PROFILE); \
+	cmake .. -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE); \
+	cmake --build .; \
 
 cpp-test:
 	@if [ ! -d ./build_for_test ]; then echo "Directory 'build_for_test' does not exist. Ensure 'make cpp-build-for-test' has been run first."; exit 1; fi;
@@ -47,7 +44,8 @@ cpp-test:
 
 cpp-clean:
 	rm -rf ./build_for_test
-	rm -rf ./build_for_release
+	rm -rf ./build
+	rm -rf ./build_cross
 
 format-python:
 	$(POETRY_PYTHON_RUNNER) isort --profile black --line-length $(PYTHON_LINE_LENGTH) $(PYTHON_SWITCHES_FOR_ISORT) $(PYTHON_LINT_TARGET)

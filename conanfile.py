@@ -39,19 +39,18 @@ class SkaMidCbfFodmGen(ConanFile):
     no_copy_source = True
 
     def requirements(self):
+        # to support multi-precision floating point
+        self.requires("boost/1.81.0")
         if ( self.settings.build_type == "Debug" ):
             self.requires("gtest/1.15.0")
 
     def build(self):
         cmake = CMake(self)
         if ( self.in_local_cache ):
-            cmake.configure( source_folder=self.source_folder )
+            cmake.configure(defs={"TARGET_ARCH": f"{self.settings.arch}"}, source_folder=self.source_folder )
         else:
-            cmake.configure()
+            cmake.configure(defs={"TARGET_ARCH": f"{self.settings.arch}"})
         cmake.build()
-
-    # def build_requirements(self):
-    #     self.tool_requires("cmake/3.22.1")
 
     def package(self):
         self.copy("*.h", src="src", dst="include", keep_path=False)
