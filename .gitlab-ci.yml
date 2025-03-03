@@ -74,12 +74,10 @@ cpp-build:
 
 cpp-build-armv8:
   stage: build
-  rules:
-    - if: '$CI_COMMIT_TAG'
   before_script:
     - apt-get update && apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
   script:
-    make cpp-build-armv8 
+    - make cpp-build-armv8 
   artifacts:
     name: "$CI_COMMIT_REF_NAME-build_cross"
     paths:
