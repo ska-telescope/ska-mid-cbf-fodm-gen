@@ -33,9 +33,10 @@ cpp-build:
 	conan install .. --output-folder=. -s build_type=$(CMAKE_BUILD_TYPE) -pr:b ../profiles/default -pr:h ../profiles/$(CONAN_HOST_PROFILE); \
 	conan build ..
 
+cpp-test: TEST_BUILD_DIR=build
 cpp-test:
-	@if [ ! -d ./build_for_test ]; then echo "Directory 'build_for_test' does not exist. Ensure 'make cpp-build-for-test' has been run first."; exit 1; fi;
-	cd build_for_test && mkdir -p reports; \
+	@if [ ! -d $(TEST_BUILD_DIR) ]; then echo "Build directory '$(TEST_BUILD_DIR)' does not exist. Ensure the code has been built before testing."; exit 1; fi;
+	cd $(TEST_BUILD_DIR) && mkdir -p reports; \
 	ctest --test-dir src --output-on-failure --force-new-ctest-process --output-junit reports/unit-tests.xml
 
 cpp-clean:
