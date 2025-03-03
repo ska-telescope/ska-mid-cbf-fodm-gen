@@ -108,7 +108,7 @@ cpp-test:
 
 # Using a custom conan job instead of SKA template, as we don't know if SKA will maintain conan support in the future,
 # however we need conan in this repo at least for now to be able to support the Talon (AA0.5/1) RDT.
-cpp-publish:
+cpp-release:
   stage: publish
   dependencies: 
     - cpp-build-release
@@ -123,5 +123,5 @@ cpp-publish:
         CONAN_PKG_VERSION=$(echo ${CONAN_INFO[1]} | awk -F/ '{print $2}' | tr -d ")");
         conan remote add conan-internal https://artefact.skao.int/repository/conan-internal/ true;
         conan user $CAR_CONAN_USERNAME -p $CAR_CONAN_PASSWORD -r conan-internal;
-        conan export-pkg -f . $CONAN_PKG_NAME/$CONAN_PKG_VERSION@$CONAN_USER_CHANNEL;
+        conan export-pkg -f .. $CONAN_PKG_NAME/$CONAN_PKG_VERSION@$CONAN_USER_CHANNEL;
       ); done;
