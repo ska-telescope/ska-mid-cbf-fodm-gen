@@ -117,7 +117,7 @@ cpp-release:
     - cpp-test
   script:
     - |
-      CONAN_INFO=($(cd build; conan info ./conanfile.py -n None));
+      CONAN_INFO=($(conan info ./conanfile.py -n None));
       CONAN_PKG_NAME=$(echo ${CONAN_INFO[-1]} | awk -F/ '{print $1}' | tr -d "(");
       CONAN_PKG_VERSION=$(echo ${CONAN_INFO[-1]} | awk -F/ '{print $2}' | tr -d ")");
       conan remote add conan-internal https://artefact.skao.int/repository/conan-internal/ true;
