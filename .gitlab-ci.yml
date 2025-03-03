@@ -62,36 +62,26 @@ include:
 #       echo "python-lint: Installing with poetry";
 #       time poetry install --all-extras;
 
-cpp-build-for-test:
-  stage: build
-  script:
-    - make cpp-build-for-test
-  artifacts:
-    name: "$CI_COMMIT_REF_NAME-build-for-test"
-    paths:
-      - build_for_test/*
-    expire_in: 1 d
-
-cpp-build-release:
+cpp-build:
   stage: build
   rules:
     - if: '$CI_COMMIT_TAG'
   script:
-    - make cpp-build-release
+    - make cpp-build-x86
   artifacts:
     name: "$CI_COMMIT_REF_NAME-build"
     paths:
       - build/*
     expire_in: 1 d
 
-cpp-build-release-armv8:
+cpp-build-armv8:
   stage: build
   rules:
     - if: '$CI_COMMIT_TAG'
   before_script:
     - apt-get update && apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
   script:
-    make cpp-build-release-armv8 
+    make cpp-build-armv8 
   artifacts:
     name: "$CI_COMMIT_REF_NAME-build_cross"
     paths:
@@ -101,14 +91,14 @@ cpp-build-release-armv8:
 cpp-test:
   stage: test
   dependencies: 
-    - cpp-build-for-test
+    - cpp-build
   script:
     - make cpp-test
   artifacts:
     paths:
-      - build_for_test/
+      - build/
     reports:
-      junit: build_for_test/src/reports/unit-tests.xml
+      junit: build/src/reports/unit-tests.xml
 
 # Using a custom conan job instead of SKA template, as we don't know if SKA will maintain conan support in the future,
 # however we need conan in this repo at least for now to be able to support the Talon (AA0.5/1) RDT.
@@ -116,8 +106,8 @@ cpp-test:
 cpp-release:
   stage: publish
   dependencies: 
-    - cpp-build-release
-    - cpp-build-release-armv8
+    - cpp-build
+    - cpp-build-armv8
     - cpp-test
   rules:
     - if: '$CI_COMMIT_TAG'

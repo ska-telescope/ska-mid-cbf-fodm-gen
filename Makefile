@@ -19,13 +19,10 @@ PYTHON_TEST_FILE = ./python/tests/
 
 include .make/*.mk
 
-cpp-build-for-test:
-	make cpp-build CPP_BUILD_DIR=build_for_test CMAKE_BUILD_TYPE=Debug
-
-cpp-build-release:
+cpp-build-x86:
 	make cpp-build CPP_BUILD_DIR=build CMAKE_BUILD_TYPE=Release CONAN_HOST_PROFILE=default
 
-cpp-build-release-armv8:
+cpp-build-armv8:
 	make cpp-build CPP_BUILD_DIR=build_cross CMAKE_BUILD_TYPE=Release CONAN_HOST_PROFILE=armv8
 
 cpp-build: CPP_BUILD_DIR=build
@@ -42,7 +39,6 @@ cpp-test:
 	ctest --test-dir src --output-on-failure --force-new-ctest-process --output-junit reports/unit-tests.xml
 
 cpp-clean:
-	rm -rf ./build_for_test
 	rm -rf ./build
 	rm -rf ./build_cross
 

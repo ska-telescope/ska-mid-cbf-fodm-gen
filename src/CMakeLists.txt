@@ -29,7 +29,7 @@ link_libraries(
 )
 message( STATUS "${PROJECT_NAME}: Defined linked library list for src targets..." )
 
-if ( CMAKE_BUILD_TYPE MATCHES Debug )
+if ( TARGET_ARCH MATCHES x86_64 )
 	enable_testing()
 	include(GoogleTest)
 	add_subdirectory( test )
