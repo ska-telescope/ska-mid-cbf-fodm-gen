@@ -116,10 +116,12 @@ cpp-publish:
     - cpp-test
   script:
     - |
-      cd build_for_release;
-      CONAN_INFO=($(conan info ../conanfile.py -n None));
-      CONAN_PKG_NAME=$(echo ${CONAN_INFO[1]} | awk -F/ '{print $1}' | tr -d "(");
-      CONAN_PKG_VERSION=$(echo ${CONAN_INFO[1]} | awk -F/ '{print $2}' | tr -d ")");
-      conan remote add conan-internal https://artefact.skao.int/repository/conan-internal/ true;
-      conan user $CAR_CONAN_USERNAME -p $CAR_CONAN_PASSWORD -r conan-internal
-      conan export-pkg -f . $CONAN_PKG_NAME/$CONAN_PKG_VERSION@$CONAN_USER_CHANNEL;
+      for d in build build_cross; do (
+        cd $d;
+        CONAN_INFO=($(conan info ../conanfile.py -n None));
+        CONAN_PKG_NAME=$(echo ${CONAN_INFO[1]} | awk -F/ '{print $1}' | tr -d "(");
+        CONAN_PKG_VERSION=$(echo ${CONAN_INFO[1]} | awk -F/ '{print $2}' | tr -d ")");
+        conan remote add conan-internal https://artefact.skao.int/repository/conan-internal/ true;
+        conan user $CAR_CONAN_USERNAME -p $CAR_CONAN_PASSWORD -r conan-internal;
+        conan export-pkg -f . $CONAN_PKG_NAME/$CONAN_PKG_VERSION@$CONAN_USER_CHANNEL;
+      ); done;
