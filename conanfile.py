@@ -42,7 +42,6 @@ class SkaMidCbfFodmGen(ConanFile):
         # to support multi-precision floating point
         self.requires("boost/1.81.0")
         if ( self.settings.build_type == "Debug" ):
-            #self.requires("gtest/1.10.0#192bfd9521a002db8d6c94e39aa617a8")
             self.requires("gtest/1.15.0")
 
     def build(self):
@@ -52,9 +51,6 @@ class SkaMidCbfFodmGen(ConanFile):
         else:
             cmake.configure(defs={"TARGET_ARCH": f"{self.settings.arch}"})
         cmake.build()
-
-    # def build_requirements(self):
-    #     self.tool_requires("cmake/3.22.1")
 
     def package(self):
         self.copy("*.h", src="src", dst="include", keep_path=False)

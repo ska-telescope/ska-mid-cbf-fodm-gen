@@ -6,7 +6,7 @@
 
 message( STATUS "\n-- ${PROJECT_NAME}: Configuring test targets..." )
 set( TEST_TARGET_OBJ ${PROJECT_NAME}-test-obj )
-set( TEST_TARGET_BIN test-${PROJECT_NAME} )
+set( TEST_TARGET_BIN ${PROJECT_NAME}-test-bin )
 set( TEST_TARGET_LIB ${PROJECT_NAME}-test-lib )
 set( TEST_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src/test )
 set( TEST_WORKDIR "${CMAKE_BINARY_DIR}/src/test" )
@@ -34,7 +34,7 @@ endforeach()
 
 link_libraries(
 	${TARGET_LIB}
-  )
+)
 message( STATUS "${PROJECT_NAME}: Defined linked library list for test targets..." )
 
 
@@ -52,7 +52,7 @@ target_include_directories( ${TEST_TARGET_OBJ}
 	${CONAN_INCLUDE_DIRS}
 	${PROJECT_SOURCE_DIR}/src
 	${PROJECT_SOURCE_DIR}/src/test/
-	)
+)
 message( STATUS "${PROJECT_NAME}: Defined include directory list for test targets..." )
 get_property( dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach( src ${dirs})
@@ -68,10 +68,10 @@ endforeach()
 message(STATUS "${PROJECT_NAME}: Creating test executable ${TEST_TARGET_BIN}" )
 add_executable( ${TEST_TARGET_BIN} $<TARGET_OBJECTS:${TEST_TARGET_OBJ}> )
 
-add_test( NAME ${PROJECT_NAME}_test
-	COMMAND ${CMAKE_BINARY_DIR}/bin/${TEST_TARGET_BIN} --gtest_output=xml:${CMAKE_BINARY_DIR}/report.xml 
-	WORKING_DIRECTORY ${TEST_WORKDIR} 
-)
+# add_test( NAME ${PROJECT_NAME}_test
+# 	COMMAND ${CMAKE_BINARY_DIR}/bin/${TEST_TARGET_BIN} --gtest_output=xml:${CMAKE_BINARY_DIR}/report.xml 
+# 	WORKING_DIRECTORY ${TEST_WORKDIR} 
+# )
 
 ################################################################################
 # Specify instrumented test library
@@ -89,7 +89,7 @@ set_target_properties( ${TEST_TARGET_BIN} ${TEST_TARGET_LIB} ${TEST_TARGET_OBJ}
 )
 
 # Link test executable against gtest & gtest_main
-target_link_libraries(${TEST_TARGET_RUN} ${TEST_TARGET_BIN})
+target_link_libraries(${TEST_TARGET_BIN} gtest_main gtest)
 
 message(STATUS "${PROJECT_NAME}: Linked libraries for test targets" )
 get_target_property( LINKED_LIBS ${TEST_TARGET_BIN} LINK_LIBRARIES )
@@ -104,4 +104,4 @@ endforeach()
 configure_file(${PROJECT_SOURCE_DIR}/python/fodm_calc_ref.py ${TEST_WORKDIR}/. COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/src/test/fodm_test_input.csv ${TEST_WORKDIR}/. COPYONLY)
 
-#add_test(NAME TestFODMGen COMMAND ${TEST_TARGET_BIN} WORKING_DIRECTORY ${TEST_WORKDIR})
+gtest_discover_tests(${TEST_TARGET_BIN})

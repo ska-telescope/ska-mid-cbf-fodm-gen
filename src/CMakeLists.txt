@@ -28,6 +28,8 @@ link_libraries(
 message( STATUS "${PROJECT_NAME}: Defined linked library list for src targets..." )
 
 if ( CMAKE_BUILD_TYPE MATCHES Debug )
+	enable_testing()
+	include(GoogleTest)
 	add_subdirectory( test )
 endif()
 
@@ -43,7 +45,7 @@ target_include_directories( ${TARGET_OBJ}
 	PUBLIC
 	${CONAN_INCLUDE_DIRS}
 	${PROJECT_SOURCE_DIR}/src/
-	)
+)
 message( STATUS "${PROJECT_NAME}: Defined include directory list for src targets..." )
 get_property( dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach( src ${dirs})
