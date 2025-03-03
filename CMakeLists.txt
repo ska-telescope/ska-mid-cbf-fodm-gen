@@ -26,6 +26,7 @@ project( ${PACKAGE_NAME} VERSION ${RELEASE} )
 set( CMAKE_EXPORT_COMPILE_COMMANDS "ON" )
 message( STATUS "${PROJECT_NAME}: Exporting compile commands..." )
 
+set( CONAN_DISABLE_CHECK_COMPILER TRUE )
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
