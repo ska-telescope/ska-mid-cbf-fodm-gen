@@ -17,30 +17,45 @@ PYTHON_VARS_AFTER_PYTEST = --forked
 
 PYTHON_TEST_FILE = ./python/tests/
 
+RELEASE_BUILD_DIR = ./build
+DEBUG_BUILD_DIR = ./build-debug
+ARMV8_BUILD_DIR = ./build-cross
+
 
 include .make/*.mk
 
 
-cpp-build:
-	rm -rf ./build; mkdir build; \
-	cd ./build; \
+.PHONY: cpp-build cpp-build-debug cpp-build-armv8
+cpp-build-release:
+	rm -rf $(RELEASE_BUILD_DIR); mkdir $(RELEASE_BUILD_DIR); \
+	cd $(RELEASE_BUILD_DIR); \
 	conan install .. -pr ../profiles/default; \
 	conan build ..
 
+cpp-build-debug:
+	rm -rf $(DEBUG_BUILD_DIR); mkdir $(DEBUG_BUILD_DIR); \
+	cd $(DEBUG_BUILD_DIR); \
+	conan install .. -pr ../profiles/default -s build_type=Debug; \
+	conan build ..
+
 cpp-build-armv8:
-	rm -rf ./build-cross; mkdir build-cross; \
-	cd ./build-cross; \
+	rm -rf $(ARMV8_BUILD_DIR); mkdir $(ARMV8_BUILD_DIR); \
+	cd $(ARMV8_BUILD_DIR); \
 	conan install .. -pr:b ../profiles/default -pr:h ../profiles/armv8; \
 	conan build ..
+
+## OVERRIDE cicd makefile target: cpp-do-build
+cpp-do-build: cpp-build-release cpp-build-debug cpp-build-armv8
 	
 cpp-test:
-	@if [ ! -d ./build_for_test ]; then echo "Directory 'build_for_test' does not exist. Ensure 'make cpp-build-for-test' has been run first."; exit 1; fi;
-	cd build_for_test && mkdir -p reports; \
-	ctest --test-dir src --output-on-failure --force-new-ctest-process --output-junit reports/unit-tests.xml
+	@if [ ! -d $(DEBUG_BUILD_DIR) ]; then echo "Directory $(DEBUG_BUILD_DIR) does not exist. Ensure 'make cpp-build-debug' has been run first."; exit 1; fi;
+	cd $(DEBUG_BUILD_DIR) && mkdir -p reports; \
+	ctest --test-dir src/test --output-on-failure --force-new-ctest-process --output-junit reports/unit-tests.xml
 
 cpp-clean:
-	rm -rf ./build
-	rm -rf ./build-cross
+	rm -rf $(RELEASE_BUILD_DIR)
+	rm -rf $(DEBUG_BUILD_DIR)
+	rm -rf $(ARMV8_BUILD_DIR)
 
 format-python:
 	$(POETRY_PYTHON_RUNNER) isort --profile black --line-length $(PYTHON_LINE_LENGTH) $(PYTHON_SWITCHES_FOR_ISORT) $(PYTHON_LINT_TARGET)

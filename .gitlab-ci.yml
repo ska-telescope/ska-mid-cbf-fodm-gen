@@ -60,15 +60,26 @@ include:
 #       echo "python-lint: Installing with poetry";
 #       time poetry install --all-extras;
 
-cpp-build:
+cpp-build-release:
   stage: build
   before_script:
   script:
-    - make cpp-build USE_CONAN=$USE_CONAN
+    - make cpp-build-release USE_CONAN=$USE_CONAN
   artifacts:
     name: "$CI_COMMIT_REF_NAME-build"
     paths:
       - build/*
+    expire_in: 1 d
+
+cpp-build-debug:
+  stage: build
+  before_script:
+  script:
+    make cpp-build-debug 
+  artifacts:
+    name: "$CI_COMMIT_REF_NAME-build_debug"
+    paths:
+      - build-debug/*
     expire_in: 1 d
 
 cpp-build-armv8:
@@ -80,16 +91,17 @@ cpp-build-armv8:
   artifacts:
     name: "$CI_COMMIT_REF_NAME-build_cross"
     paths:
-      - build_cross/*
+      - build-cross/*
     expire_in: 1 d
 
 cpp-test:
   stage: test
+  needs: ["cpp-build-debug"]
   script:
     - make cpp-test
   artifacts:
     paths:
-      - build/
+      - build-debug/
     reports:
-      junit: build/reports/unit-tests.xml
+      junit: build-debug/reports/unit-tests.xml
 

@@ -27,7 +27,7 @@ link_libraries(
 )
 message( STATUS "${PROJECT_NAME}: Defined linked library list for src targets..." )
 
-if ( TARGET_ARCH MATCHES x86_64 )
+if ( CMAKE_BUILD_TYPE MATCHES Debug )
 	add_subdirectory( test )
 endif()
 

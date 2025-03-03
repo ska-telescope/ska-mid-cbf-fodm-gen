@@ -6,7 +6,7 @@
 
 message( STATUS "\n-- ${PROJECT_NAME}: Configuring test targets..." )
 set( TEST_TARGET_OBJ ${PROJECT_NAME}-test-obj )
-set( TEST_TARGET_BIN ${PROJECT_NAME}-test-bin )
+set( TEST_TARGET_BIN test-${PROJECT_NAME} )
 set( TEST_TARGET_LIB ${PROJECT_NAME}-test-lib )
 set( TEST_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src/test )
 set( TEST_WORKDIR "${CMAKE_BINARY_DIR}/src/test" )
@@ -103,3 +103,5 @@ endforeach()
 
 configure_file(${PROJECT_SOURCE_DIR}/python/fodm_calc_ref.py ${TEST_WORKDIR}/. COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/src/test/fodm_test_input.csv ${TEST_WORKDIR}/. COPYONLY)
+
+#add_test(NAME TestFODMGen COMMAND ${TEST_TARGET_BIN} WORKING_DIRECTORY ${TEST_WORKDIR})
