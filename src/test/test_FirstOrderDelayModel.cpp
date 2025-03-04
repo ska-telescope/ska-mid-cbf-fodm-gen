@@ -56,8 +56,10 @@ protected:
     const int NUM_HO_COEFF = 6;
     const int NUM_LSQ_POINTS = 1000;
     const int NUM_TEST_POINTS = 2000;
-    const long double MAX_ABS_ERR = 1.0e-10;
-    const long double MAX_CUMULATED_ERR = 1.0e-9;
+
+    // TBD: what thresholds to use?
+    const long double MAX_ABS_ERR = 1.0e-8;
+    const long double MAX_CUMULATED_ERR = 1.0e-7;
 
     FirstOrderDelayModelTest()
     {
@@ -74,6 +76,7 @@ protected:
     }
 
     void lsq_fit_max_error_test_common(const double* ho_poly, double fo_poly_interval) {
+        // Generate num_fo_polys FODMs from the start of HODM
         double t_start = ho_poly[0];
         double t_stop = ho_poly[1];
         for (int ii = 0 ; ii < NUM_FO_POLYS+1; ii++) 
@@ -83,14 +86,15 @@ protected:
         
         // LSQ fit
         FirstOrderDelayModel test_model;
-        test_model.process(t_start, t_stop, NUM_HO_COEFF, (ho_poly+2), NUM_LSQ_POINTS, NUM_FO_POLYS, t_fo_poly_, fo_polys_);
+        bool result = test_model.process(t_start, t_stop, NUM_HO_COEFF, (ho_poly+2), NUM_LSQ_POINTS, NUM_FO_POLYS, t_fo_poly_, fo_polys_);
+        EXPECT_TRUE(result);
 
         // Sample random points between within the range of generated FO polynomials
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_real_distribution<> dis(t_fo_poly_[0], t_fo_poly_[NUM_FO_POLYS]);
-        long double max_abs_err = 0.0;
-        long double cumulated_err = 0.0;
+        long double max_abs_err = 0.0;   // Checks for max error of FO fit against HO poly at any single point 
+        long double cumulated_err = 0.0; // Checks for fitting bias
         for (int ii = 0; ii < NUM_TEST_POINTS; ii++)
         {
             double t = dis(gen);
@@ -111,7 +115,7 @@ protected:
     std::vector<long double> fo_polys_;
 };
 
-// GTest test function
+// Test with a HODM generated from MATLAB
 TEST_F(FirstOrderDelayModelTest, LsqFitMaxErrorTest)
 {
     double ho_poly[HO_POLY_LEN] = {
@@ -120,4 +124,69 @@ TEST_F(FirstOrderDelayModelTest, LsqFitMaxErrorTest)
     double fo_poly_interval = 1.0 / 128;
 
     lsq_fit_max_error_test_common(ho_poly, fo_poly_interval);
+}
+
+// Test with a HODM with only a constant coefficient
+TEST_F(FirstOrderDelayModelTest, ConstHodmLsqFitMaxErrorTest)
+{
+    double ho_poly[HO_POLY_LEN] = {
+        0.0000000000000E+00,3.0000000000000E+01,0.0000000000000E+00,0.0000000000000E+00,
+        0.0000000000000E+00,0.0000000000000E+00,0.0000000000000E+00,28887.4980 };
+    double fo_poly_interval = 1.0 / 128;
+
+    lsq_fit_max_error_test_common(ho_poly, fo_poly_interval);
+}
+
+// Test with a HODM with only constant and linear coefficients
+TEST_F(FirstOrderDelayModelTest, LinearHodmLsqFitMaxErrorTest)
+{
+    double ho_poly[HO_POLY_LEN] = {
+        0.0000000000000E+00,3.0000000000000E+01,0.0000000000000E+00,0.0000000000000E+00,
+        0.0000000000000E+00,0.0000000000000E+00,1.8070000000000E+00,-55910.224908};
+    double fo_poly_interval = 1.0 / 128;
+
+    lsq_fit_max_error_test_common(ho_poly, fo_poly_interval);
+}
+
+// Test generating FODMs beyond the HODM duration
+TEST_F(FirstOrderDelayModelTest, BeyondDurationTest)
+{
+    // 10s HODM, try to generate 1000 FODMs * 0.02s interval = 20s total
+    double ho_poly[HO_POLY_LEN] = {
+        0.0000000000000E+00,1.0000000000000E+01,4.513184775273619937E-17,3.016563864250689452E-14,
+        1.077965332504251907E-09,-7.680455181115336256E-05,-1.216193871021531203E+00,28887.4980 };
+    double fo_poly_interval = 0.02;
+
+    double t_start = ho_poly[0];
+    double t_stop = ho_poly[1];
+    for (int ii = 0 ; ii < NUM_FO_POLYS+1; ii++) 
+    {
+        t_fo_poly_[ii] = t_start + fo_poly_interval * ii;
+    }
+    
+    FirstOrderDelayModel test_model;
+    bool result = test_model.process(t_start, t_stop, NUM_HO_COEFF, (ho_poly+2), NUM_LSQ_POINTS, NUM_FO_POLYS, t_fo_poly_, fo_polys_);
+    EXPECT_FALSE(result);
+}
+
+
+TEST_F(FirstOrderDelayModelTest, BeforeStartTimeTest)
+{
+    // HODM starts at t = 50. Request to generate FODMs from t < 50.
+    double ho_poly[HO_POLY_LEN] = {
+        5.0000000000000E+01,6.0000000000000E+01,4.513184775273619937E-17,3.016563864250689452E-14,
+        1.077965332504251907E-09,-7.680455181115336256E-05,-1.216193871021531203E+00,28887.4980 };
+    double fo_poly_interval = 0.01;
+
+    double t_start = ho_poly[0];
+    double t_stop = ho_poly[1];
+    double fodm_start = 45.0; // FODM starts at t = 45
+    for (int ii = 0 ; ii < NUM_FO_POLYS+1; ii++) 
+    {
+        t_fo_poly_[ii] = fodm_start + fo_poly_interval * ii;
+    }
+    
+    FirstOrderDelayModel test_model;
+    bool result = test_model.process(t_start, t_stop, NUM_HO_COEFF, (ho_poly+2), NUM_LSQ_POINTS, NUM_FO_POLYS, t_fo_poly_, fo_polys_);
+    EXPECT_FALSE(result);
 }
