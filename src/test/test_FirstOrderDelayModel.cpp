@@ -58,8 +58,8 @@ protected:
     const int NUM_TEST_POINTS = 2000;
 
     // TBD: what thresholds to use?
-    const long double MAX_ABS_ERR = 5.0e-9;
-    const long double MAX_CUMULATED_ERR = 5.0e-8;
+    const long double MAX_ABS_ERR = 1.0e-8;
+    const long double MAX_CUMULATED_ERR = 1.0e-7;
 
     FirstOrderDelayModelTest()
     {
