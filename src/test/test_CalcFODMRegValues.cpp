@@ -81,7 +81,8 @@ void run_python_ref(const std::string& input_csv, const std::string& output_csv)
     std::system(cmd.c_str());
 }
 
-TEST(CompareTest, Test1)
+// GTest test function
+TEST(CalcFODMRegValuesTest, PythonCompare)
 {
     std::string input_csv("fodm_test_input.csv");
     std::string output_csv("python_output_ref.csv");

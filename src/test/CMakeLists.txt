@@ -23,6 +23,7 @@ include(CTest)
 ################################################################################
 
 list( APPEND TEST_TARGET_SRCS ${TEST_SOURCE_DIR}/test_CalcFODMRegValues.cpp )
+list( APPEND TEST_TARGET_SRCS ${TEST_SOURCE_DIR}/test_FirstOrderDelayModel.cpp )
 message( STATUS "${PROJECT_NAME}: Defined test source file list..." )
 foreach( src ${TEST_TARGET_SRCS} )
 	message(STATUS "    ${src}")

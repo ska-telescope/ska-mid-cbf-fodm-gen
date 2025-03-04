@@ -11,6 +11,7 @@ set( TARGET_LIB ${PROJECT_NAME}-lib )
 ################################################################################
 
 list( APPEND TARGET_SRCS ${PROJECT_SOURCE_DIR}/src/CalcFODMRegValues.cpp )
+list( APPEND TARGET_SRCS ${PROJECT_SOURCE_DIR}/src/FirstOrderDelayModel.cpp )
 
 message( STATUS "${PROJECT_NAME}: Defined target source file list..." )
 foreach( src ${TARGET_SRCS} )
