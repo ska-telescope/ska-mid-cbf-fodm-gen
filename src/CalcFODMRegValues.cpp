@@ -185,11 +185,10 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   // ([R1] eq. 4, 5);
   // Note that the 2*PI factor from R1 eq. 4, 5 is not applied here, nor the 
   // mod(*, 2*PI) for phase_constant:
-  cpp_bin_float_50 f_ds_offset = cpp_bin_float_50(freq_wb_shift - freq_down_shift);
-  cpp_bin_float_50 f_ds_delay_linear_temp = f_ds_offset * fo_delay_linear;
+  cpp_bin_float_50 f_wb_ds = cpp_bin_float_50(freq_wb_shift - freq_down_shift);
+  cpp_bin_float_50 f_scfo_as = cpp_bin_float_50(freq_scfo_shift + freq_align_shift);
   cpp_bin_float_50 phase_linear_temp = 
-    (cpp_bin_float_50(freq_scfo_shift + freq_align_shift) + 
-    f_ds_offset * fo_delay_linear) / output_sample_rate_f;
+    (f_scfo_as + f_wb_ds * fo_delay_linear) / output_sample_rate_f;
 
   // Calculate the time_factor, as per  [R1] eq. 5:
   // time_factor = k * T1 where T1 is the validity period of the FO (= 10 ms),
@@ -216,9 +215,19 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   time_factor = floor(time_factor * output_sample_rate_f);
   
   // Calculate phase_constant_temp (see [R1] eq. 5):
+  // Note: in [R1] the FODMs have a common start time. But the generated FODMs are evaluated
+  // at time relative to the start of each FODM. Instead of the original formula
+  //
+  // phase_linear = ((F_SCFO + F_AS) + (F_WB - F_DS) * fo_delay_linear) / output_sample_rate
+  // phase_constant = kT1Pv * phase_linear + (F_WB - F_DS) * fo_delay_const
+  //
+  // we need to avoid double-counting (F_WB - F_DS) * fo_delay_linear, so the phase constant
+  // becomes:
+  // 
+  // phase_constant = kT1Pv * (F_SCFO + F_AS) / output_sample_rate + (F_WB - F_DS) * fo_delay_const
+  //
   cpp_bin_float_50 phase_constant_temp = 
-    time_factor * phase_linear_temp + 
-    f_ds_offset * fo_delay_constant;
+    time_factor * f_scfo_as / output_sample_rate_f + f_wb_ds * fo_delay_constant;
   
   // Take mod of phase_linear_temp and phase_constant_temp to get to the final value
   cpp_bin_float_50 phase_linear   = mod_pmhalf(phase_linear_temp);

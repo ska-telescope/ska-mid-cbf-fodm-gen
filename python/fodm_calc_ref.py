@@ -132,12 +132,11 @@ def calc_fodm_register_values(fodm, hodm_start_t, input_sample_rate, output_samp
         + (F_WB - F_DS) * Decimal(fodm["delay_linear"])
     ) / FFS_0
 
-    phase_const = phase_linear * (
-        Decimal(current_output_timestamp_samples)
-        + hodm_output_timestamp_samples
-    ) + (F_WB - F_DS) * Decimal(
-        fodm["delay_constant"]
+    phase_const = (
+        (F_SCFO + F_AS) / FFS_0
+        * (Decimal(current_output_timestamp_samples) + hodm_output_timestamp_samples)
         # Correct for the phase added by the VCC due to the as yet uncorrected delay.
+        + (F_WB - F_DS) * Decimal(fodm["delay_constant"])
     )
     
     phase_const_mod = _mod_pmhalf(phase_const)
