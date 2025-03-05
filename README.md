@@ -15,5 +15,5 @@ ARMv8 build for TalonDX
 
 ## Unit test
 
-To run the unit test suite:
+To run the unit test suite, first run the debug build, then:
 `make cpp-test`

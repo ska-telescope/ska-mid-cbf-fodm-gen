@@ -1,3 +1,14 @@
+/***
+ * test_CalcFODMRegValues.cpp
+ * 
+ * The unit test driver for the CalcFODMRegValues free function.
+ * The test input is a CSV file. Each row specifies a FODM, 
+ * sampling rates, and the frequency shifts. The test driver runs
+ * the inputs through the reference python code (based on FW notebook)
+ * and the function, and compares the final values that would be written 
+ * to the FODM register. The values are expected to be equal.
+ * 
+ ***/
 #include <vector>
 #include <cstdlib>
 #include "csv.h"

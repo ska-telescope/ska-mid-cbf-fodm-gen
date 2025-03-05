@@ -1,3 +1,12 @@
+/***
+ * test_FirstOrderDelayModel.cpp
+ * 
+ * The unit test driver for the FirstOrderDelayModel class.
+ * Mostly the tests evaluates the HODM and the derived FODMs
+ * at random points in range, and compare the results. The test
+ * passes if the resulting difference is less than the thresholds.
+ * 
+ ***/
 #include <random>
 #include <fstream>
 #include <boost/multiprecision/cpp_bin_float.hpp> 

@@ -5,11 +5,6 @@
 #include <boost/math/special_functions/round.hpp>
 using namespace boost::multiprecision;
 
-
-// // TODO: REMOVE
-// #include <iostream>
-// #include <iomanip>
-
 namespace ska_mid_cbf_fodm_gen
 {
 
@@ -130,18 +125,16 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   // As an extra refinement, remove a v. small amount of delay, so that to hit 
   // zero resampling error in the middle of the FODM instead of only at the end
   // giving an overall positive delay error.
-  cpp_bin_float_50 delay_linear_unscaled = delay_linear_scaled * cpp_bin_float_50(pow(2,-31));
-  cpp_bin_float_50 delay_linear_error_samples = 
-    delay_linear_unscaled * validity_interval_samples - delay_linear * validity_interval_samples;
-  // cpp_bin_float_50 delay_linear_error_samples = 
-  //   (delay_linear_scaled * cpp_bin_float_50(pow(2,-63)) - delay_linear) * validity_interval_samples;
  
   #ifdef DISABLE_DELAY_LINEAR_ERROR
     cpp_bin_float_50 delay_constant_input_samps =  fo_delay_constant * input_sample_rate_f;
   #else
-      // Apply  /2 to fo_delay_constant (in samps):
-      cpp_bin_float_50 delay_constant_input_samps = 
-        fo_delay_constant * input_sample_rate_f - delay_linear_error_samples / 2;
+    // Apply  /2 to fo_delay_constant (in samps):
+    cpp_bin_float_50 delay_linear_unscaled = delay_linear_scaled * cpp_bin_float_50(pow(2,-31));
+    cpp_bin_float_50 delay_linear_error_samples = 
+      delay_linear_unscaled * validity_interval_samples - delay_linear * validity_interval_samples;
+    cpp_bin_float_50 delay_constant_input_samps = 
+      fo_delay_constant * input_sample_rate_f - delay_linear_error_samples / 2;
   #endif
 
 
@@ -235,27 +228,7 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
 
   int32_t phase_linear_scaled = static_cast<int32_t>(round(phase_linear * pow(2, 31)));
   int32_t phase_constant_scaled = static_cast<int32_t>(round(phase_constant * pow(2, 31)));
-
-  // std::cout << std::setprecision(26) 
-  //   << "start_ts_s = " << start_ts_s << std::endl
-  //   << "stop_ts_s = " << stop_ts_s << std::endl
-  //   << "fo_delay_linear = " << fo_delay_linear << std::endl
-  //   << "fo_delay_constant = " << fo_delay_constant << std::endl
-  //   << "delay_linear = " << delay_linear << std::endl
-  //   << "delay_constant = " << delay_constant << std::endl
-  //   << "current_output_timestamp_samples = " << current_output_timestamp_samples << std::endl
-  //   << "next_output_timestamp_samples = " << next_output_timestamp_samples << std::endl
-  //   << "validity_interval_samples = " << validity_interval_samples << std::endl
-  //   << "delay_linear_scaled = " << delay_linear_scaled << std::endl
-  //   << "delay_linear_unscaled = " << delay_linear_unscaled << std::endl
-  //   << "delay_linear_error_samples = " << delay_linear_error_samples << std::endl
-  //   << "f_ds_delay_linear_temp = " << f_ds_delay_linear_temp << std::endl
-  //   << "phase_linear_temp = " << phase_linear_temp << std::endl
-  //   << "phase_constant_temp = " << phase_constant_temp << std::endl 
-  //   << "phase_linear_mod = " << phase_linear << std::endl
-  //   << "phase_constant_mod = " << phase_constant << std::endl 
-  //   << "-------" << std::endl;
-    
+   
 
   // -------------------------------------------------------------------------
 
