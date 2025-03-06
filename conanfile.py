@@ -40,7 +40,7 @@ class SkaMidCbfFodmGen(ConanFile):
 
     def requirements(self):
         # to support multi-precision floating point
-        self.requires("boost/1.81.0")
+        self.requires("boost/1.71.0")
         if ( self.settings.build_type == "Debug" ):
             self.requires("gtest/1.15.0")
 

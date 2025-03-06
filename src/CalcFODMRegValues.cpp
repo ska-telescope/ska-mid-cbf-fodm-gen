@@ -46,7 +46,7 @@ cpp_bin_float_50 mod_pmhalf(cpp_bin_float_50 val)
  *                 Mid.CBF ReSampler, by Thushara Gunaratne, Ver.1.0-2021-07-15 
  *
  */
-FirstOrderDelayModelsRegisterSet CalcFodmRegValues( 
+FirstOrderDelayModelRegisterValues CalcFodmRegValues( 
     const FoPoly &fo_poly,
     uint32_t input_sample_rate,
     uint32_t output_sample_rate,
@@ -103,7 +103,7 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   // delay_linear_error_samples calculation below:
   // Need to be cast to int before writing to the register
   // using boost::math::round;
-  cpp_bin_float_50 delay_linear_scaled = round(delay_linear * pow(2, 31));
+  cpp_bin_float_50 delay_linear_scaled = round(delay_linear * pow(2, 63));
 
   // Calculate output_timestamp_samples_f,  used to populate the 
   // first_output_timestamp FPGA register field:
@@ -130,7 +130,7 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
     cpp_bin_float_50 delay_constant_input_samps =  fo_delay_constant * input_sample_rate_f;
   #else
     // Apply  /2 to fo_delay_constant (in samps):
-    cpp_bin_float_50 delay_linear_unscaled = delay_linear_scaled * cpp_bin_float_50(pow(2,-31));
+    cpp_bin_float_50 delay_linear_unscaled = delay_linear_scaled * cpp_bin_float_50(pow(2,-63));
     cpp_bin_float_50 delay_linear_error_samples = 
       delay_linear_unscaled * validity_interval_samples - delay_linear * validity_interval_samples;
     cpp_bin_float_50 delay_constant_input_samps = 
@@ -226,13 +226,13 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   cpp_bin_float_50 phase_linear   = mod_pmhalf(phase_linear_temp);
   cpp_bin_float_50 phase_constant = mod_pmhalf(phase_constant_temp); 
 
-  int32_t phase_linear_scaled = static_cast<int32_t>(round(phase_linear * pow(2, 31)));
+  int64_t phase_linear_scaled = static_cast<int64_t>(round(phase_linear * pow(2, 63)));
   int32_t phase_constant_scaled = static_cast<int32_t>(round(phase_constant * pow(2, 31)));
    
 
   // -------------------------------------------------------------------------
 
-  FirstOrderDelayModelsRegisterSet fodm_reg_values;
+  FirstOrderDelayModelRegisterValues fodm_reg_values;
 
   // First input timestamp. Need to add back the offset in input samples.
   //   buf.last_fo_timestamp_in_buffer = first_input_timestamp_samples_int;
@@ -242,7 +242,7 @@ FirstOrderDelayModelsRegisterSet CalcFodmRegValues(
   fodm_reg_values.delay_constant = static_cast<uint32_t>(delay_constant_scaled);
 
   // Linear delay ratio
-  fodm_reg_values.delay_linear = (uint32_t)delay_linear_scaled;
+  fodm_reg_values.delay_linear = static_cast<uint64_t>(delay_linear_scaled);
 
   // Constant part of the FO phase polynomial
   fodm_reg_values.phase_constant = phase_constant_scaled;

@@ -62,7 +62,7 @@ void parse_input_csv(
 
 void parse_output_csv(
     const std::string& csv_file, 
-    std::vector<FirstOrderDelayModelsRegisterSet>& func_output)
+    std::vector<FirstOrderDelayModelRegisterValues>& func_output)
 {
     io::CSVReader<OUTPUT_CSV_NUM_COL> in(csv_file);
     in.read_header(io::ignore_extra_column, "first_input_timestamp", "delay_constant",
@@ -70,7 +70,7 @@ void parse_output_csv(
         "output_PPS", "first_output_timestamp");
     
     func_output.clear();
-    FirstOrderDelayModelsRegisterSet data;
+    FirstOrderDelayModelRegisterValues data;
     while ( in.read_row(
         data.first_input_timestamp, 
         data.delay_constant, 
@@ -99,7 +99,7 @@ TEST(CalcFODMRegValuesTest, PythonCompare)
     std::string output_csv("python_output_ref.csv");
     run_python_ref(input_csv, output_csv);
 
-    std::vector<FirstOrderDelayModelsRegisterSet> python_output;
+    std::vector<FirstOrderDelayModelRegisterValues> python_output;
     parse_output_csv(output_csv, python_output);
 
     std::vector<CsvInputs> test_input;
@@ -109,7 +109,7 @@ TEST(CalcFODMRegValuesTest, PythonCompare)
 
     for (int ii = 0; ii < test_input.size(); ii++)
     {
-        FirstOrderDelayModelsRegisterSet func_output = 
+        FirstOrderDelayModelRegisterValues func_output = 
             CalcFodmRegValues(
                 test_input[ii].fo_poly,
                 test_input[ii].input_sample_rate,

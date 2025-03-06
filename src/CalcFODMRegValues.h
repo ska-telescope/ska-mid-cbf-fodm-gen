@@ -8,7 +8,7 @@
 namespace ska_mid_cbf_fodm_gen
 {
 
-struct FirstOrderDelayModelsRegisterSet
+struct FirstOrderDelayModelRegisterValues
 {
     uint64_t first_input_timestamp;
     uint32_t delay_constant;
@@ -20,7 +20,7 @@ struct FirstOrderDelayModelsRegisterSet
     uint64_t first_output_timestamp;
 };
 
-FirstOrderDelayModelsRegisterSet CalcFodmRegValues( 
+FirstOrderDelayModelRegisterValues CalcFodmRegValues( 
     const FoPoly &fo_poly,
     uint32_t input_sample_rate,
     uint32_t output_sample_rate,

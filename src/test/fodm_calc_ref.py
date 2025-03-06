@@ -82,13 +82,13 @@ def calc_fodm_register_values(fodm, hodm_start_t, input_sample_rate, output_samp
 
     delay_linear = resampling_rate * (Decimal(fodm["delay_linear"])+1)
 
-    delay_linear_int = _to_int(delay_linear, 2**31)
+    delay_linear_int = _to_int(delay_linear, 2**63)
     fodm_reg_values["delay_linear"] = delay_linear_int
 
     # Maybe remove a small amout of delay, so that hit zero resampling error in the middle of the FODM instead of only
     # at the end - giving an overall positive (200fs?) delay error. Being related to the sample rate (k) here makes some sense.
     delay_linear_error_samples = (
-        (Decimal(delay_linear_int) * Decimal(2**-31)) - delay_linear
+        (Decimal(delay_linear_int) * Decimal(2**-63)) - delay_linear
     ) * fodm_output_samples
 
     delay_const_input_samples = (
@@ -165,7 +165,7 @@ def calc_fodm_register_values(fodm, hodm_start_t, input_sample_rate, output_samp
         round(phase_const_mod * 2**31)
     )
     fodm_reg_values['phase_linear'] = int(
-        round(phase_linear_mod * 2**31)
+        round(phase_linear_mod * 2**63)
     )
     fodm_reg_values['validity_period'] = int(fodm_output_samples) - 1
 
