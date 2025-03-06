@@ -55,3 +55,7 @@ class SkaMidCbfFodmGen(ConanFile):
     def package(self):
         self.copy("*.h", src="src", dst="include", keep_path=False)
         self.copy("*.a", src="lib", dst="lib", keep_path=False)
+        
+    def package_info(self):
+        self.cpp_info.name = self.name
+        self.cpp_info.libs = [self.name]
