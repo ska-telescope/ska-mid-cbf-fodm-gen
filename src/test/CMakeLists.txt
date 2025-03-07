@@ -103,6 +103,7 @@ endforeach()
 ################################################################################
 
 configure_file(${PROJECT_SOURCE_DIR}/src/test/fodm_calc_ref.py ${TEST_WORKDIR}/. COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/src/test/HODM_to_FODM.py ${TEST_WORKDIR}/. COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/src/test/fodm_test_input.csv ${TEST_WORKDIR}/. COPYONLY)
 
 gtest_discover_tests(${TEST_TARGET_BIN})

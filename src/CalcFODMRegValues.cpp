@@ -11,7 +11,7 @@ namespace ska_mid_cbf_fodm_gen
 /**
  * Uncomment to not apply the delay_linear_error_samples to delay_constant
  */
-// #define DISABLE_DELAY_LINEAR_ERROR
+#define DISABLE_DELAY_LINEAR_ERROR
 
 cpp_bin_float_50 NS_TO_SECONDS(cpp_bin_float_50 ns) {
   return ns / cpp_bin_float_50(1000000000);
@@ -97,7 +97,7 @@ FirstOrderDelayModelRegisterValues CalcFodmRegValues(
   cpp_bin_float_50 input_sample_rate_f(input_sample_rate);
   cpp_bin_float_50 output_sample_rate_f(output_sample_rate);
   cpp_bin_float_50 resampling_rate = input_sample_rate_f / output_sample_rate_f;
-  cpp_bin_float_50 delay_linear   = resampling_rate * (fo_delay_linear + 1);
+  cpp_bin_float_50 delay_linear   = resampling_rate + fo_delay_linear;
 
   // Calculate delay_linear_scaled here, since it is required in the
   // delay_linear_error_samples calculation below:
