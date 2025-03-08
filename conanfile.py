@@ -23,6 +23,8 @@ class SkaMidCbfFodmGen(ConanFile):
     version = get_version()
     license = "BSD-3-Clause"
     author = "John So (john.so@mda.space)"
+    url = f"https://gitlab.com/ska-telescope/{name}.git"
+    description = "A library for generating first order delay models, used by the Resampler Delay Tracker"
 
     settings = { "os": ["Linux"],
                  "compiler" : [ "gcc" ],

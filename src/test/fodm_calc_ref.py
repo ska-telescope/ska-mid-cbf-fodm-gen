@@ -8,16 +8,12 @@ from HODM_to_FODM import calc_fodm_regs
 def _to_int(val, scale=1):
     return round(Decimal(val) * Decimal(scale))
 
-def _mod_pmhalf(val):
-    """modulo to plus-minus a half [-0.5 to 0.5)"""
-    return (((val % Decimal(1)) + Decimal(1.5)) % Decimal(1)) - Decimal(0.5)
-
 def _get_fs_index(input_sample_rate, output_sample_rate, f_scfo):
     fs_index = int(round(f_scfo * 10 / 9 / (input_sample_rate - output_sample_rate)))
     return fs_index
 
 def _to_reg_values(fodm_reg_gen):
-    linear_resolution = 2**63 # 2**31
+    linear_resolution = 2**63 # 2**31 - the linear registers were updated to 64bit
     fodm_regs = {}
     vals = next(fodm_reg_gen)
     fodm_regs["first_input_timestamp"] = vals["first_input_timestamp"]
@@ -94,8 +90,6 @@ def _run_test(test_input_csv, output_csv):
             )
 
             fodm_regs = _to_reg_values(fodm_reg_gen)
-
-            #out_row = calc_fodm_register_values(fodm=fodm, hodm_start_t=hodm_start_t, input_sample_rate=input_sample_rate, output_sample_rate=output_sample_rate, f_wb=f_wb, f_as=f_as, f_ds=f_ds, f_scfo=f_scfo)
             writer.writerow(fodm_regs)
 
 if __name__ == '__main__':

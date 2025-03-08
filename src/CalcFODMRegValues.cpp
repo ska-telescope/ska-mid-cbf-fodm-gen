@@ -11,7 +11,7 @@ namespace ska_mid_cbf_fodm_gen
 /**
  * Uncomment to not apply the delay_linear_error_samples to delay_constant
  */
-#define DISABLE_DELAY_LINEAR_ERROR
+// #define DISABLE_DELAY_LINEAR_ERROR
 
 cpp_bin_float_50 NS_TO_SECONDS(cpp_bin_float_50 ns) {
   return ns / cpp_bin_float_50(1000000000);
