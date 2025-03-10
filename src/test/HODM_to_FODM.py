@@ -205,4 +205,19 @@ def calc_fodm_regs(
         current_output_timestamp_samples = (
             current_output_timestamp_samples + fodm_output_samples
         )
+
+
+        # print(f"start_ts_s = {fodm_data.get('start_time')}")
+        # print(f"stop_ts_s = {fodm_data.get('end_time')}")
+        # print(f"fo_delay_linear = {fodm_data.get('delay_linear')}")
+        # print(f"fo_delay_constant = {fodm_data.get('delay_constant')}")
+        # print(f"delay_linear = {delay_linear}")
+        # print(f"delay_constant = {delay_const}")
+        # print(f"current_output_timestamp_samples = {current_output_timestamp_samples}")
+        # print(f"next_output_timestamp_samples = {next_output_timestamp_samples}")
+        # print(f"validity_interval_samples = {fodm_output_samples}")    
+        # print(f"phase_linear_temp = {phase_linear}")
+        # print(f"phase_constant_temp = {phase_const}")
+        # print("-------------------------")
+
         yield fodm_vals

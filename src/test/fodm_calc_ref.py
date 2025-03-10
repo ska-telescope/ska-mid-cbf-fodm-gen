@@ -8,12 +8,16 @@ from HODM_to_FODM import calc_fodm_regs
 def _to_int(val, scale=1):
     return round(Decimal(val) * Decimal(scale))
 
+def _mod_pmhalf(val):
+    """modulo to plus-minus a half [-0.5 to 0.5)"""
+    return (((val % Decimal(1)) + Decimal(1.5)) % Decimal(1)) - Decimal(0.5)
+
 def _get_fs_index(input_sample_rate, output_sample_rate, f_scfo):
     fs_index = int(round(f_scfo * 10 / 9 / (input_sample_rate - output_sample_rate)))
     return fs_index
 
 def _to_reg_values(fodm_reg_gen):
-    linear_resolution = 2**63 # 2**31 - the linear registers were updated to 64bit
+    linear_resolution = 2**31  # 2**63- the linear registers were updated to 64bit 
     fodm_regs = {}
     vals = next(fodm_reg_gen)
     fodm_regs["first_input_timestamp"] = vals["first_input_timestamp"]
@@ -26,8 +30,150 @@ def _to_reg_values(fodm_reg_gen):
     fodm_regs["first_output_timestamp"] = vals['first_output_timestamp']
     return fodm_regs
 
+# OLD REFERENCE
+# Modified version of _fodm_loader() from FW notebook's talon_FSP.py.
+# This takes one set of FODM, input and output sampling rates, and frequency
+# shifts, and calculate the values that would be written to the FODM register
+def calc_fodm_register_values(fodm, hodm_start_t, input_sample_rate, output_sample_rate, f_wb, f_as, f_ds, f_scfo):
+
+    fodm_reg_values = {}
+    isr = Decimal(input_sample_rate)
+    osr = Decimal(output_sample_rate)
+    resampling_rate = isr / osr
+
+    hodm_offset_seconds = Decimal(0)
+    hodm_seconds = Decimal(int(hodm_start_t) - hodm_offset_seconds)
+    hodm_input_timestamp_samples = hodm_seconds * isr
+    hodm_output_timestamp_samples = hodm_seconds * osr
+
+    current_output_timestamp_samples = Decimal(
+        int((Decimal(fodm["start_time"]) - hodm_seconds) * osr)
+    )
+    next_output_timestamp_samples = Decimal(
+        int((Decimal(fodm["stop_time"]) - hodm_seconds) * osr)
+    )
+    fodm_output_samples = (
+        next_output_timestamp_samples
+        - current_output_timestamp_samples
+    )  # units of whole output samples
+
+    # calculate the input timestamp based on the output timestamp.
+    current_input_timestamp_samples = (
+        current_output_timestamp_samples * resampling_rate
+    )  # in units of input samples.
+
+    delay_linear = resampling_rate + Decimal(fodm["delay_linear"])
+
+    delay_linear_int = _to_int(delay_linear, 2**31)
+    fodm_reg_values["delay_linear"] = delay_linear_int
+
+    # Maybe remove a small amout of delay, so that hit zero resampling error in the middle of the FODM instead of only
+    # at the end - giving an overall positive (200fs?) delay error. Being related to the sample rate (k) here makes some sense.
+    # delay_linear_error_samples = (
+    #     (Decimal(delay_linear_int) * Decimal(2**-31)) - delay_linear
+    # ) * fodm_output_samples
+
+    # delay_const_input_samples = (
+    #     (Decimal(fodm["delay_constant"])) * isr
+    # ) - delay_linear_error_samples / 2
+    delay_const_input_samples = Decimal(fodm["delay_constant"]) * isr
+
+    first_input_timestamp_fractional_samples = (
+        current_input_timestamp_samples + delay_const_input_samples
+    )
+    delay_const = first_input_timestamp_fractional_samples - int(
+        first_input_timestamp_fractional_samples
+    )
+
+    first_input_timestamp_fractional_samples += (
+        hodm_input_timestamp_samples
+    )
+    fodm_reg_values['first_input_timestamp'] = int(
+        first_input_timestamp_fractional_samples
+    )
+
+    fodm_reg_values['delay_constant'] = _to_int(delay_const, 2**32)
+
+    # OS = Decimal(10) / Decimal(9)  # FIXME - magic number.
+
+    # VDSF =self.vcc_cfg.get("INPUT_FRAME_SIZE") # i.e. 18 # Down Sampling Factor for the VCC
+    FFS_j = Decimal(input_sample_rate)  # Freq Slice Sample Rate.
+    FFS_0 = Decimal(output_sample_rate)  # Common sample rate.
+    F_DS = Decimal(f_ds)  # Frequency Down Shift at VCC.
+    F_WB = Decimal(f_wb)  # Wideband shift applied to align a frequency slice to start of a band.
+    F_AS = Decimal(f_as)  # additional shift to apply to align channels between frequency slices.
+    F_SCFO = Decimal(f_scfo)  # Frequency shift due to SCFO sampling
+
+    # phase_linear = 2* np.pi * ((F_SCFO + F_AS) + (F_WB - F_DS) * delay_linear)/FFS_0
+    # phase_const= np.mod(k * T1Pv * phase_linear + 2 * np.pi * (F_WB - F_DS) * delay_const, 2 * np.pi)
+    # Divide through by 2*pi, since registers are -0.5 to 0.5
+    # phase_linear = ((F_SCFO + F_AS) + (F_WB - F_DS) * delay_linear)/FFS_0
+    # phase_const= np.mod(k * T1Pv * phase_linear + (F_WB - F_DS) * delay_const, 1)
+    # Correct for the phase due to the resampling.
+    phase_linear = (
+        (F_SCFO + F_AS)
+        + (F_WB - F_DS) * Decimal(fodm["delay_linear"])
+    ) / FFS_0
+
+    phase_const = (
+        (F_SCFO + F_AS) / FFS_0
+        * (Decimal(current_output_timestamp_samples) + hodm_output_timestamp_samples)
+        # Correct for the phase added by the VCC due to the as yet uncorrected delay.
+        + (F_WB - F_DS) * Decimal(fodm["delay_constant"])
+    )
+    
+    phase_const_mod = _mod_pmhalf(phase_const)
+    phase_linear_mod = _mod_pmhalf(phase_linear)
+
+    print(f"start_ts_s = {fodm['start_time']}")
+    print(f"stop_ts_s = {fodm['stop_time']}")
+    print(f"fo_delay_linear = {fodm['delay_linear']}")
+    print(f"fo_delay_constant = {fodm['delay_constant']}")
+    print(f"delay_linear = {delay_linear}")
+    print(f"delay_constant = {delay_const}")
+    print(f"current_output_timestamp_samples = {current_output_timestamp_samples}")
+    print(f"next_output_timestamp_samples = {next_output_timestamp_samples}")
+    print(f"validity_interval_samples = {fodm_output_samples}")
+    print(f"delay_linear_int = {delay_linear_int}")    
+    # print(f"delay_linear_error_samples = {delay_linear_error_samples}")
+    print(f"(F_WB - F_DS) * Decimal(fo_delay_linear) = {(F_WB - F_DS) * Decimal(fodm['delay_linear'])}")            
+    print(f"phase_linear_temp = {phase_linear}")
+    print(f"phase_constant_temp = {phase_const}")
+    print(f"phase_linear_mod = {phase_linear_mod}" )
+    print(f"phase_const_mod = {phase_const_mod}" )
+    print("-------------------------")
+
+
+    fodm_reg_values['phase_constant'] = int(
+        round(phase_const_mod * 2**31)
+    )
+    fodm_reg_values['phase_linear'] = int(
+        round(phase_linear_mod * 2**31)
+    )
+    fodm_reg_values['validity_period'] = int(fodm_output_samples) - 1
+
+    # need to limit to 32 bit
+    output_pps_timestamp = (
+        Decimal(math.ceil(current_output_timestamp_samples / osr))
+        * osr
+    )
+    output_pps_timestamp += hodm_output_timestamp_samples
+    fodm_reg_values['output_PPS'] = int(output_pps_timestamp) & 0xffffffff 
+
+    first_output_timestamp_samples = (
+        current_output_timestamp_samples
+        + hodm_output_timestamp_samples
+    )
+    fodm_reg_values['first_output_timestamp'] = int(
+        first_output_timestamp_samples
+    )
+    return fodm_reg_values
+
+
 
 def _run_test(test_input_csv, output_csv):
+    USE_OLD_REFERENCE = False
+
     with open(test_input_csv) as f_in, open(output_csv, 'w') as f_out:
 
         output_fields = [
@@ -63,34 +209,39 @@ def _run_test(test_input_csv, output_csv):
             f_ds = Decimal(row['f_ds'])
             f_scfo = Decimal(row['f_scfo'])
 
-            # all the freq shifts are provided to RDT software.
-            # FW notebook calculates SCFO and down-shift here.
-            # So here we reverse the formula and feed freq slice index to
-            # the python
-            fs_index = _get_fs_index(input_sample_rate, output_sample_rate, f_scfo)
+            if USE_OLD_REFERENCE:
+                out_row = calc_fodm_register_values(fodm=fodm, hodm_start_t=hodm_start_t, input_sample_rate=input_sample_rate, output_sample_rate=output_sample_rate, f_wb=f_wb, f_as=f_as, f_ds=f_ds, f_scfo=f_scfo)
+                writer.writerow(out_row)
+            else:
+                # all the freq shifts are provided to RDT software.
+                # FW notebook calculates SCFO and down-shift here.
+                # So here we reverse the formula and feed freq slice index to
+                # the python
+                fs_index = _get_fs_index(input_sample_rate, output_sample_rate, f_scfo)
 
-            fodms = [
-                {
-                    "delay_constant": fo_delay_const,  # seconds
-                    "delay_linear": fo_delay_linear,  # seconds/second
-                    "start_time": fodm_start_t, # time of application, seconds
-                    "end_time" : fodm_stop_t
-                }
-            ]
+                fodms = [
+                    {
+                        "delay_constant": fo_delay_const,  # seconds
+                        "delay_linear": fo_delay_linear,  # seconds/second
+                        "start_time": fodm_start_t, # time of application, seconds
+                        "end_time" : fodm_stop_t
+                    }
+                ]
 
-            start_RDT = 0
-            fodm_reg_gen = calc_fodm_regs(
-                fodms,
-                input_sample_rate,
-                output_sample_rate,
-                fs_index,
-                start_RDT,
-                f_wb,
-                f_as
-            )
+                start_RDT = 0
+                fodm_reg_gen = calc_fodm_regs(
+                    fodms,
+                    input_sample_rate,
+                    output_sample_rate,
+                    fs_index,
+                    start_RDT,
+                    f_wb,
+                    f_as
+                )
 
-            fodm_regs = _to_reg_values(fodm_reg_gen)
-            writer.writerow(fodm_regs)
+                fodm_regs = _to_reg_values(fodm_reg_gen)
+
+                writer.writerow(fodm_regs)
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:

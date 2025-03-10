@@ -11,7 +11,10 @@ namespace ska_mid_cbf_fodm_gen
 /**
  * Uncomment to not apply the delay_linear_error_samples to delay_constant
  */
-// #define DISABLE_DELAY_LINEAR_ERROR
+#define DISABLE_DELAY_LINEAR_ERROR
+
+// Uncomment to print values to stdout
+// #define PRINT_INTERMEDIATE_VALUES
 
 cpp_bin_float_50 NS_TO_SECONDS(cpp_bin_float_50 ns) {
   return ns / cpp_bin_float_50(1000000000);
@@ -103,7 +106,7 @@ FirstOrderDelayModelRegisterValues CalcFodmRegValues(
   // delay_linear_error_samples calculation below:
   // Need to be cast to int before writing to the register
   // using boost::math::round;
-  cpp_bin_float_50 delay_linear_scaled = round(delay_linear * pow(2, 63));
+  cpp_bin_float_50 delay_linear_scaled = round(delay_linear * pow(2, 31));
 
   // Calculate output_timestamp_samples_f,  used to populate the 
   // first_output_timestamp FPGA register field:
@@ -130,7 +133,7 @@ FirstOrderDelayModelRegisterValues CalcFodmRegValues(
     cpp_bin_float_50 delay_constant_input_samps =  fo_delay_constant * input_sample_rate_f;
   #else
     // Apply  /2 to fo_delay_constant (in samps):
-    cpp_bin_float_50 delay_linear_unscaled = delay_linear_scaled * cpp_bin_float_50(pow(2,-63));
+    cpp_bin_float_50 delay_linear_unscaled = delay_linear_scaled * cpp_bin_float_50(pow(2,-31));
     cpp_bin_float_50 delay_linear_error_samples = 
       delay_linear_unscaled * validity_interval_samples - delay_linear * validity_interval_samples;
     cpp_bin_float_50 delay_constant_input_samps = 
@@ -226,9 +229,27 @@ FirstOrderDelayModelRegisterValues CalcFodmRegValues(
   cpp_bin_float_50 phase_linear   = mod_pmhalf(phase_linear_temp);
   cpp_bin_float_50 phase_constant = mod_pmhalf(phase_constant_temp); 
 
-  int64_t phase_linear_scaled = static_cast<int64_t>(round(phase_linear * pow(2, 63)));
+  int32_t phase_linear_scaled = static_cast<int32_t>(round(phase_linear * pow(2, 31)));
   int32_t phase_constant_scaled = static_cast<int32_t>(round(phase_constant * pow(2, 31)));
    
+#ifdef PRINT_INTERMEDIATE_VALUES
+  std::cout << std::setprecision(26) 
+    << "start_ts_s = " << start_ts_s << std::endl
+    << "stop_ts_s = " << stop_ts_s << std::endl
+    << "fo_delay_linear = " << fo_delay_linear << std::endl
+    << "fo_delay_constant = " << fo_delay_constant << std::endl
+    << "delay_linear = " << delay_linear << std::endl
+    << "delay_constant = " << delay_constant << std::endl
+    << "current_output_timestamp_samples = " << current_output_timestamp_samples << std::endl
+    << "next_output_timestamp_samples = " << next_output_timestamp_samples << std::endl
+    << "validity_interval_samples = " << validity_interval_samples << std::endl
+    << "delay_linear_scaled = " << delay_linear_scaled << std::endl
+    << "phase_linear_temp = " << phase_linear_temp << std::endl
+    << "phase_constant_temp = " << phase_constant_temp << std::endl 
+    << "phase_linear_mod = " << phase_linear << std::endl
+    << "phase_constant_mod = " << phase_constant << std::endl 
+    << "-------" << std::endl;
+#endif
 
   // -------------------------------------------------------------------------
 
@@ -242,7 +263,7 @@ FirstOrderDelayModelRegisterValues CalcFodmRegValues(
   fodm_reg_values.delay_constant = static_cast<uint32_t>(delay_constant_scaled);
 
   // Linear delay ratio
-  fodm_reg_values.delay_linear = static_cast<uint64_t>(delay_linear_scaled);
+  fodm_reg_values.delay_linear = static_cast<uint32_t>(delay_linear_scaled);
 
   // Constant part of the FO phase polynomial
   fodm_reg_values.phase_constant = phase_constant_scaled;

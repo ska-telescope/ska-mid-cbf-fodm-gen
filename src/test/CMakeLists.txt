@@ -22,7 +22,7 @@ include(CTest)
 # The resulting list of source files is displayed when cmake is invoked.
 ################################################################################
 
-list( APPEND TEST_TARGET_SRCS ${TEST_SOURCE_DIR}/test_CalcFODMRegValues.cpp )
+list( APPEND TEST_TARGET_SRCS ${TEST_SOURCE_DIR}/test_CompareCalcFODMRegValues.cpp )
 list( APPEND TEST_TARGET_SRCS ${TEST_SOURCE_DIR}/test_FirstOrderDelayModel.cpp )
 message( STATUS "${PROJECT_NAME}: Defined test source file list..." )
 foreach( src ${TEST_TARGET_SRCS} )
