@@ -1,0 +1,133 @@
+# GitLab CI in conjunction with GitLab Runner can use Docker Engine to test and build any application.
+# Docker, when used with GitLab CI, runs each job in a separate and isolated container using the predefined image that is set up in .gitlab-ci.yml.
+# In this case we use the latest python docker image to build and test this project.
+image: $SKA_K8S_TOOLS_BUILD_DEPLOY
+
+# cache is used to specify a list of files and directories which should be cached between jobs. You can only use paths that are within the project workspace.
+# If cache is defined outside the scope of jobs, it means it is set globally and all jobs will use that definition
+# cache:
+#   paths:
+
+stages:
+  # - lint
+  - build
+  - test
+#  - pages
+  - publish
+  - scan
+
+
+
+# Standardised included jobs
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  MINIKUBE: "false"
+  CI_POETRY_VERSION: "2.0.1"
+  CONAN_USER_CHANNEL: "marvin/stable"
+
+# Include CI templates
+include:
+
+# Python
+  # - project: 'ska-telescope/templates-repository'
+  #   file: 'gitlab-ci/includes/python-lint.gitlab-ci.yml'
+  # - project: 'ska-telescope/templates-repository'
+  #   file: 'gitlab-ci/includes/python-build.gitlab-ci.yml'
+  # - project: 'ska-telescope/templates-repository'
+  #   file: 'gitlab-ci/includes/python-test.gitlab-ci.yml'
+
+# Docs
+  # - project: 'ska-telescope/templates-repository'
+  #   file: 'gitlab-ci/includes/docs.gitlab-ci.yml'
+
+# Release
+  - project: 'ska-telescope/templates-repository'
+    file: 'gitlab-ci/includes/release.gitlab-ci.yml'
+
+# .post step finalisers eg: badges
+  - project: 'ska-telescope/templates-repository'
+    file: 'gitlab-ci/includes/finaliser.gitlab-ci.yml'
+
+# python-lint:
+#   before_script:
+#     - poetry config virtualenvs.in-project true
+#     - echo "python-build Setting.. poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE"
+#     - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE
+#     - |
+#       if [[ -n $CI_POETRY_VERSION ]] && [[ $(poetry --version) != *$CI_POETRY_VERSION* ]]; then
+#         echo "python-lint: Updating poetry to $CI_POETRY_VERSION";
+#         time pipx upgrade poetry;
+#       fi;
+
+#       echo "python-lint: Installing with poetry";
+#       time poetry install --all-extras;
+
+cpp-build:
+  stage: build
+  script:
+    - make cpp-build-x86
+  artifacts:
+    name: "$CI_COMMIT_REF_NAME-build"
+    paths:
+      - build/*
+    expire_in: 1 d
+
+cpp-build-debug:
+  stage: build
+  before_script:
+  script:
+    make cpp-build-debug 
+  artifacts:
+    name: "$CI_COMMIT_REF_NAME-build_debug"
+    paths:
+      - build_debug/*
+    expire_in: 1 d
+
+cpp-build-armv8:
+  stage: build
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+  script:
+    - make cpp-build-armv8 
+  artifacts:
+    name: "$CI_COMMIT_REF_NAME-build_cross"
+    paths:
+      - build_cross/*
+    expire_in: 1 d
+
+cpp-test:
+  stage: test
+  dependencies: 
+    - cpp-build-debug
+  script:
+    - make cpp-test
+  artifacts:
+    paths:
+      - build_debug/
+    reports:
+      junit: build_debug/src/reports/unit-tests.xml
+
+# Using a custom conan job instead of SKA template, as we don't know if SKA will maintain conan support in the future,
+# however we need conan in this repo at least for now to be able to support the Talon (AA0.5/1) RDT.
+# (Also, the SKA pipeline template doesn't appear to support multi-platform compilation.)
+cpp-release:
+  stage: publish
+  dependencies: 
+    - cpp-build
+    - cpp-build-debug
+    - cpp-build-armv8
+    - cpp-test
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  script:
+    - |
+      CONAN_INFO=($(conan info ./conanfile.py -n None));
+      CONAN_PKG_NAME=$(echo ${CONAN_INFO[-1]} | awk -F/ '{print $1}' | tr -d "(");
+      CONAN_PKG_VERSION=$(echo ${CONAN_INFO[-1]} | awk -F/ '{print $2}' | tr -d ")");
+      conan remote add conan-internal https://artefact.skao.int/repository/conan-internal/ true;
+      conan user $CAR_CONAN_USERNAME -p $CAR_CONAN_PASSWORD -r conan-internal;
+      for d in build build_cross; do (
+        cd $d;
+        conan export-pkg -f .. $CONAN_PKG_NAME/$CONAN_PKG_VERSION@$CONAN_USER_CHANNEL;
+      ); done;
+      conan upload --all -r conan-internal $CONAN_PKG_NAME/$CONAN_PKG_VERSION@$CONAN_USER_CHANNEL;
