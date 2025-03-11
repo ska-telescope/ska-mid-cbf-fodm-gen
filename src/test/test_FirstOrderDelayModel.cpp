@@ -261,8 +261,8 @@ TEST_F(FirstOrderDelayModelTest, BeforeStartTimeTest)
 }
 
 
-// TODO: disabled for now because the current implementation samples the fitting errors at different points, 
-//       making the test result inconsistent.
+// TODO: the test passes about 9 out of 10 times. Not sure why it fails 
+//       sometimes. Disabled for now.
 //
 // Expect better outcome when more FODMs are used over
 // the same duration. 
@@ -273,13 +273,78 @@ TEST_F(FirstOrderDelayModelTest, BeforeStartTimeTest)
 //         9.70129171414893e-09,-0.0006912409302024491,-10.945745078849585,259987.4794 };
 //     double fo_poly_interval = 0.01;
 //     int num_fodms = 1000;
-//     PolyvalStats stats1; 
-//     lsq_fit_max_error_test_common(ho_poly, fo_poly_interval, num_fodms, false, stats1);
     
-//     fo_poly_interval = 0.02;
-//     num_fodms = 500;
-//     PolyvalStats stats2; 
-//     lsq_fit_max_error_test_common(ho_poly, fo_poly_interval, num_fodms, false, stats2);
+//     // Generate num_fo_polys FODMs from the start of HODM
+//     double hodm_t_start = ho_poly[0];
+//     double hodm_t_stop = ho_poly[1];
+//     for (int ii = 0 ; ii < num_fodms+1; ii++) 
+//     {
+//         t_fo_poly_[ii] = hodm_t_start + fo_poly_interval * ii;
+//     }
+
+//     // the interval and number of FODMs should add up to the same duration as the first set
+//     double fo_poly_interval_2 = 0.02;
+//     int num_fodms_2 = 500;
+//     std::vector<double> t_fo_poly_2(num_fodms_2+1);
+//     std::vector<long double> fo_polys_2(num_fodms_2*2);
+//     std::vector<long double> ho_fo_delta_2(NUM_TEST_POINTS);
+//     for (int ii = 0 ; ii < num_fodms_2+1; ii++) 
+//     {
+//         t_fo_poly_2[ii] = hodm_t_start + fo_poly_interval_2 * ii;
+//     }
+    
+//     // LSQ fit
+//     FirstOrderDelayModel test_model;
+//     bool result = test_model.process(hodm_t_start, hodm_t_stop, NUM_HO_COEFF, (ho_poly+2), NUM_LSQ_POINTS, num_fodms, t_fo_poly_, fo_polys_);
+//     EXPECT_TRUE(result);
+//     result = test_model.process(hodm_t_start, hodm_t_stop, NUM_HO_COEFF, (ho_poly+2), NUM_LSQ_POINTS, num_fodms_2, t_fo_poly_2, fo_polys_2);
+//     EXPECT_TRUE(result);
+
+//     // Sample random points between within the range of generated FO polynomials
+//     std::random_device rd;
+//     std::mt19937 gen(rd());
+//     std::uniform_real_distribution<> dis(t_fo_poly_[0], t_fo_poly_[num_fodms]);
+
+//     PolyvalStats stats1, stats2; 
+//     stats1.max_abs_delta = 0.0;
+//     stats1.cumulated_delta = 0.0;
+//     stats2.max_abs_delta = 0.0;
+//     stats2.cumulated_delta = 0.0; 
+//     for (int ii = 0; ii < NUM_TEST_POINTS; ii++)
+//     {
+//         double t = dis(gen);
+//         int fo_idx = find_fo_poly_idx(t, fo_poly_interval);
+//         ASSERT_LT(fo_idx, t_fo_poly_.size());
+//         long double val_from_ho = polyval((ho_poly+2), NUM_HO_COEFF, t - hodm_t_start);
+//         long double val_from_fo = fo_polys_[fo_idx*2+1] + fo_polys_[fo_idx*2] * (t - t_fo_poly_[fo_idx]);
+//         ho_fo_delta_[ii] = val_from_ho - val_from_fo;
+        
+//         stats1.max_abs_delta = abs(ho_fo_delta_[ii]) > stats1.max_abs_delta ? abs(ho_fo_delta_[ii]) : stats1.max_abs_delta;
+//         stats1.cumulated_delta = stats1.cumulated_delta + ho_fo_delta_[ii];
+
+//         fo_idx = find_fo_poly_idx(t, fo_poly_interval_2);
+//         val_from_fo = fo_polys_2[fo_idx*2+1] + fo_polys_2[fo_idx*2] * (t - t_fo_poly_2[fo_idx]);
+//         ho_fo_delta_2[ii] = val_from_ho - val_from_fo;
+//         stats2.max_abs_delta = abs(ho_fo_delta_2[ii]) > stats2.max_abs_delta ? abs(ho_fo_delta_2[ii]) : stats2.max_abs_delta;
+//         stats2.cumulated_delta = stats2.cumulated_delta + ho_fo_delta_2[ii];
+//     }
+
+//     // Calculate mean and standard deviation of the delta
+//     stats1.mean_delta = stats1.cumulated_delta / NUM_TEST_POINTS;
+//     stats1.std_delta = 0.0;
+//     for (int ii = 0; ii < ho_fo_delta_.size(); ii++)
+//     {
+//         stats1.std_delta += ((ho_fo_delta_[ii] - stats1.mean_delta) * (ho_fo_delta_[ii] - stats1.mean_delta));
+//     }
+//     stats1.std_delta = std::sqrt(stats1.std_delta / (ho_fo_delta_.size()-1));
+
+//     stats2.mean_delta = stats2.cumulated_delta / NUM_TEST_POINTS;
+//     stats2.std_delta = 0.0;
+//     for (int ii = 0; ii < ho_fo_delta_2.size(); ii++)
+//     {
+//         stats2.std_delta += ((ho_fo_delta_2[ii] - stats2.mean_delta) * (ho_fo_delta_2[ii] - stats2.mean_delta));
+//     }
+//     stats2.std_delta = std::sqrt(stats2.std_delta / (ho_fo_delta_2.size()-1));
 
 //     EXPECT_LE(abs(stats1.mean_delta), abs(stats2.mean_delta));
 //     EXPECT_LE(stats1.std_delta, stats2.std_delta);
