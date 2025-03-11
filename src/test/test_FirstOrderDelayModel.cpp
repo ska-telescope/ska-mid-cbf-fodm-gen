@@ -75,6 +75,7 @@ protected:
 
     const double MAX_ABS_DELTA_DEFAULT = 1.0e-9;
     const double MAX_MEAN_ERR_DEFAULT = 1.0e-7;
+    const double MAX_STD_DELTA_DEFAULT = 1.0e-9;
 
     FirstOrderDelayModelTest()
     {
@@ -99,13 +100,20 @@ protected:
 
         ASSERT_LE(num_fodms, MAX_NUM_FODMS);
         
+        // Try to make the threshold proportional to the linear term coefficient,
+        // since it should contribute the most to the change over time.
+        // Set a minimum because the coefficient may be 0.
         double max_abs_delta = abs(ho_poly[HO_POLY_LEN-2]) * 1.0e-8;
         if (max_abs_delta < MAX_ABS_DELTA_DEFAULT) {
             max_abs_delta = MAX_ABS_DELTA_DEFAULT;
         }
-        double max_mean_err = abs(ho_poly[HO_POLY_LEN-2]) * 5.0e-9;
-        if (max_mean_err < MAX_MEAN_ERR_DEFAULT) {
-            max_mean_err = MAX_MEAN_ERR_DEFAULT;
+        double max_mean_delta = abs(ho_poly[HO_POLY_LEN-2]) * 5.0e-9;
+        if (max_mean_delta < MAX_MEAN_ERR_DEFAULT) {
+            max_mean_delta = MAX_MEAN_ERR_DEFAULT;
+        }
+        double max_std_delta = abs(ho_poly[HO_POLY_LEN-2]) * 1.0e-8;
+        if (max_std_delta < MAX_STD_DELTA_DEFAULT) {
+            max_std_delta = MAX_STD_DELTA_DEFAULT;
         }
 
         // Generate num_fo_polys FODMs from the start of HODM
@@ -151,7 +159,8 @@ protected:
         stats.std_delta = std::sqrt(stats.std_delta / (ho_fo_delta_.size()-1));
 
         EXPECT_LT(stats.max_abs_delta, max_abs_delta);
-        EXPECT_LT(abs(stats.mean_delta), max_mean_err);
+        EXPECT_LT(abs(stats.mean_delta), max_mean_delta);
+        EXPECT_LT(stats.std_delta, max_std_delta);
         
         std::cout << std::setprecision(12) << "mean(delta) = " << stats.mean_delta 
             << ", std(delta) = " << stats.std_delta 
@@ -176,6 +185,19 @@ TEST_F(FirstOrderDelayModelTest, LsqFitMaxErrorTest)
         1.0000000000000E+01,3.0000000000000E+01,4.513184775273619937E-17,3.016563864250689452E-14,
         1.077965332504251907E-09,-7.680455181115336256E-05,-1.216193871021531203E+00,28887.4980 };
     double fo_poly_interval = 1.0 / 128;
+    PolyvalStats stats;
+
+    lsq_fit_max_error_test_common(ho_poly, fo_poly_interval, MAX_NUM_FODMS, false, stats);
+}
+
+// Test with a HODM generated from MATLAB.
+// This HODM has some of the largest coefficients I can find among MATLAB generated HODMs.
+TEST_F(FirstOrderDelayModelTest, LsqFitMaxErrorTest2)
+{
+    double ho_poly[HO_POLY_LEN] = {
+        1.0000000000000E+01,3.0000000000000E+01,3.956738275640760941E-14,-1.885738529952905433E-12,
+        -9.731305625195973794E-09,6.899681529986780764E-04,1.100300531941965509E+01,-259508.7983 };
+    double fo_poly_interval = 0.01;
     PolyvalStats stats;
 
     lsq_fit_max_error_test_common(ho_poly, fo_poly_interval, MAX_NUM_FODMS, false, stats);
