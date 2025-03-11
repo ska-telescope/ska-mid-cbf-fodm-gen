@@ -10,7 +10,7 @@ set( TARGET_LIB ${PROJECT_NAME}-lib )
 # The resulting list of source files is displayed when cmake is invoked.
 ################################################################################
 
-list( APPEND TARGET_SRCS ${PROJECT_SOURCE_DIR}/src/CalcFODMRegValues.cpp )
+list( APPEND TARGET_SRCS ${PROJECT_SOURCE_DIR}/src/CalcFodmRegisterValues.cpp )
 list( APPEND TARGET_SRCS ${PROJECT_SOURCE_DIR}/src/FirstOrderDelayModel.cpp )
 
 message( STATUS "${PROJECT_NAME}: Defined target source file list..." )

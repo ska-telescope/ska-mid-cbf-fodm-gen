@@ -1,4 +1,4 @@
-#include "CalcFODMRegValues.h"
+#include "CalcFodmRegisterValues.h"
 
 // to support higher precision
 #include <boost/multiprecision/cpp_bin_float.hpp> 
@@ -49,7 +49,7 @@ cpp_bin_float_50 mod_pmhalf(cpp_bin_float_50 val)
  *                 Mid.CBF ReSampler, by Thushara Gunaratne, Ver.1.0-2021-07-15 
  *
  */
-FirstOrderDelayModelRegisterValues CalcFodmRegValues( 
+FirstOrderDelayModelRegisterValues CalcFodmRegisterValues( 
     const FoPoly &fo_poly,
     uint32_t input_sample_rate,
     uint32_t output_sample_rate,
@@ -129,17 +129,17 @@ FirstOrderDelayModelRegisterValues CalcFodmRegValues(
   // zero resampling error in the middle of the FODM instead of only at the end
   // giving an overall positive delay error.
  
+  // Apply  /2 to fo_delay_constant (in samps):
+  cpp_bin_float_50 delay_linear_unscaled = delay_linear_scaled * cpp_bin_float_50(pow(2,-31));
+  cpp_bin_float_50 delay_linear_error_samples = 
+    delay_linear_unscaled * validity_interval_samples - delay_linear * validity_interval_samples;
+    
   #ifdef DISABLE_DELAY_LINEAR_ERROR
-    cpp_bin_float_50 delay_constant_input_samps =  fo_delay_constant * input_sample_rate_f;
-  #else
-    // Apply  /2 to fo_delay_constant (in samps):
-    cpp_bin_float_50 delay_linear_unscaled = delay_linear_scaled * cpp_bin_float_50(pow(2,-31));
-    cpp_bin_float_50 delay_linear_error_samples = 
-      delay_linear_unscaled * validity_interval_samples - delay_linear * validity_interval_samples;
-    cpp_bin_float_50 delay_constant_input_samps = 
-      fo_delay_constant * input_sample_rate_f - delay_linear_error_samples / 2;
+    delay_linear_error_samples = 0;
   #endif
 
+  cpp_bin_float_50 delay_constant_input_samps = 
+    fo_delay_constant * input_sample_rate_f - delay_linear_error_samples / 2;
 
   // Calculate the integer and fractional part of first_input_timestamp_fractional_samples;
   // (See the definitions of the first_input_timestamp and delay_constant fields 

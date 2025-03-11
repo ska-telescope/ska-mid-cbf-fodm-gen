@@ -20,7 +20,7 @@ struct FirstOrderDelayModelRegisterValues
     uint64_t first_output_timestamp;
 };
 
-FirstOrderDelayModelRegisterValues CalcFodmRegValues( 
+FirstOrderDelayModelRegisterValues CalcFodmRegisterValues( 
     const FoPoly &fo_poly,
     uint32_t input_sample_rate,
     uint32_t output_sample_rate,

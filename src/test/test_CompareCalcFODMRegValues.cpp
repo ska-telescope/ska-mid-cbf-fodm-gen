@@ -1,7 +1,7 @@
 /***
- * test_CompareCalcFODMRegValues.cpp
+ * test_CompareCalcFodmRegisterValues.cpp
  * 
- * The unit test driver for the CalcFODMRegValues free function.
+ * The unit test driver for the CalcFodmRegisterValues free function.
  * The test input is a CSV file. Each row specifies a FODM, 
  * sampling rates, and the frequency shifts. The test driver runs
  * the inputs through the reference python code (based on FW notebook)
@@ -14,7 +14,7 @@
 #include <iomanip>
 #include <cstdlib>
 #include <random>
-#include "CalcFODMRegValues.h"
+#include "CalcFodmRegisterValues.h"
 #include "csv.h"
 
 #include "gtest/gtest.h"
@@ -164,7 +164,7 @@ void run_python_ref(const std::string& input_csv, const std::string& output_csv)
 }
 
 // GTest test function
-TEST(CalcFODMRegValuesTest, PythonCompare)
+TEST(CalcFodmRegisterValuesTest, PythonCompare)
 {
     std::string input_csv("fodm_test_input.csv");
     std::string input_csv_added_params("fodm_test_input_added_params.csv");
@@ -189,7 +189,7 @@ TEST(CalcFODMRegValuesTest, PythonCompare)
     for (int ii = 0; ii < test_input.size(); ii++)
     {
         FirstOrderDelayModelRegisterValues func_output = 
-            CalcFodmRegValues(
+            CalcFodmRegisterValues(
                 test_input[ii].fo_poly,
                 test_input[ii].input_sample_rate,
                 test_input[ii].output_sample_rate,
