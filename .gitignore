@@ -1,0 +1,16 @@
+build*
+bin
+lib
+.settings
+.project
+.cproject
+.public
+.vscode/
+cmake_install.cmake
+CMakeCache.txt
+CMakeFiles
+compile_commands.json
+conan.lock
+conanbuildinfo.*
+conaninfo.*
+graph_info.json
