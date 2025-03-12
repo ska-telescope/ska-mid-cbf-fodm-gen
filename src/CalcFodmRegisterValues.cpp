@@ -31,9 +31,121 @@ cpp_bin_float_50 mod_pmhalf(cpp_bin_float_50 val)
   return fmod((fmod(val,cpp_bin_float_50(1)) + cpp_bin_float_50(1.5)),cpp_bin_float_50(1)) - cpp_bin_float_50(0.5);
 }
 
+// The First Order Delay Models register values before
+// scaling to integers. In the future the firmware driver may
+// want to take this as input. The multi-precision type is used in place of 
+// double precision because it is not enough for the 64bit delay and phase 
+// linear registers.
+struct FirstOrderDelayModelRegisterRawValues
+{
+    uint64_t first_input_timestamp;
+    cpp_bin_float_50 delay_constant;
+    cpp_bin_float_50 phase_constant;
+    cpp_bin_float_50 delay_linear;
+    cpp_bin_float_50 phase_linear;
+    uint32_t validity_period;
+    uint32_t output_PPS;
+    uint64_t first_output_timestamp;
+};
+
+// ---- Forward Declarations ----
+FirstOrderDelayModelRegisterRawValues CalcFodmRegisterRawValues( 
+    const FoPoly &fo_poly,
+    uint32_t input_sample_rate,
+    uint32_t output_sample_rate,
+    double freq_down_shift,
+    double freq_align_shift,
+    double freq_wb_shift,
+    double freq_scfo_shift );
+
+FirstOrderDelayModelRegisterValues RawToRegisterValues(
+    const FirstOrderDelayModelRegisterRawValues& raw_values);
+
+FirstOrderDelayModelRegisterValuesVer1 RawToRegisterValuesV1(
+    const FirstOrderDelayModelRegisterRawValues& raw_values);
+
+// -----------------------------
 
 /**
- * Write a first order delay model to the FPGA registers.
+ * Calculates the values to be written to the first order delay model
+ * registers after accounting for the resampling and frequency shifts.
+ *
+ * @param fo_poly a first order delay model
+ * @param input_sample_rate Input sample rate in samples/second
+ * @param output_sample_rate Output sample rate in samples/second
+ * @param freq_down_shift Frequency down-shift at the VCC-OSPPFB [Hz]
+ * @param freq_align_shift Frequency shift applied to align fine channels between FSs [Hz]
+ * @param freq_wb_shift Net Wideband (WB) frequency shift [Hz] 
+ * @param freq_scfo_shift Frequency shift required due to SCFO sampling [Hz]
+ * 
+ * @return the first order delay model register values
+ */
+FirstOrderDelayModelRegisterValues CalcFodmRegisterValues( 
+    const FoPoly &fo_poly,
+    uint32_t input_sample_rate,
+    uint32_t output_sample_rate,
+    double freq_down_shift,
+    double freq_align_shift,
+    double freq_wb_shift,
+    double freq_scfo_shift )
+{
+  FirstOrderDelayModelRegisterRawValues raw_values = 
+    CalcFodmRegisterRawValues( 
+      fo_poly,
+      input_sample_rate,
+      output_sample_rate,
+      freq_down_shift,
+      freq_align_shift,
+      freq_wb_shift,
+      freq_scfo_shift
+    );
+  
+  return RawToRegisterValues(raw_values);
+}
+
+/**
+ * Calculates the values to be written to the first order delay model
+ * registers after accounting for the resampling and frequency shifts.
+ * This function is for version 1 of the FODM register, which has 32 bits
+ * for delay linear and phase linear.
+ *
+ * @param fo_poly a first order delay model
+ * @param input_sample_rate Input sample rate in samples/second
+ * @param output_sample_rate Output sample rate in samples/second
+ * @param freq_down_shift Frequency down-shift at the VCC-OSPPFB [Hz]
+ * @param freq_align_shift Frequency shift applied to align fine channels between FSs [Hz]
+ * @param freq_wb_shift Net Wideband (WB) frequency shift [Hz] 
+ * @param freq_scfo_shift Frequency shift required due to SCFO sampling [Hz]
+ * 
+ * @return the first order delay model register values
+ */
+FirstOrderDelayModelRegisterValuesVer1 CalcFodmRegisterValuesV1(
+    const FoPoly &fo_poly,
+    uint32_t input_sample_rate,
+    uint32_t output_sample_rate,
+    double freq_down_shift,
+    double freq_align_shift,
+    double freq_wb_shift,
+    double freq_scfo_shift )
+{
+  FirstOrderDelayModelRegisterRawValues raw_values = 
+    CalcFodmRegisterRawValues( 
+      fo_poly,
+      input_sample_rate,
+      output_sample_rate,
+      freq_down_shift,
+      freq_align_shift,
+      freq_wb_shift,
+      freq_scfo_shift
+    );
+  
+  return RawToRegisterValuesV1(raw_values);
+}
+
+
+/**
+ * Calculates the values to be written to the first order delay model
+ * registers.
  *
  * fo_poly: FO delay model to write
  * input_sample_rate: Input sample rate in samples/second
@@ -49,7 +161,7 @@ cpp_bin_float_50 mod_pmhalf(cpp_bin_float_50 val)
  *                 Mid.CBF ReSampler, by Thushara Gunaratne, Ver.1.0-2021-07-15 
  *
  */
-FirstOrderDelayModelRegisterValues CalcFodmRegisterValues( 
+FirstOrderDelayModelRegisterRawValues CalcFodmRegisterRawValues( 
     const FoPoly &fo_poly,
     uint32_t input_sample_rate,
     uint32_t output_sample_rate,
@@ -228,9 +340,6 @@ FirstOrderDelayModelRegisterValues CalcFodmRegisterValues(
   // Take mod of phase_linear_temp and phase_constant_temp to get to the final value
   cpp_bin_float_50 phase_linear   = mod_pmhalf(phase_linear_temp);
   cpp_bin_float_50 phase_constant = mod_pmhalf(phase_constant_temp); 
-
-  int64_t phase_linear_scaled = static_cast<int64_t>(round(phase_linear * pow(2, 63)));
-  int32_t phase_constant_scaled = static_cast<int32_t>(round(phase_constant * pow(2, 31)));
    
 #ifdef PRINT_INTERMEDIATE_VALUES
   std::cout << std::setprecision(26) 
@@ -257,27 +366,26 @@ FirstOrderDelayModelRegisterValues CalcFodmRegisterValues(
   //       should be moved to another function. 
   //
 
-  FirstOrderDelayModelRegisterValues fodm_reg_values;
+  FirstOrderDelayModelRegisterRawValues fodm_reg_raw_values;
 
   // First input timestamp. Need to add back the offset in input samples.
   //   buf.last_fo_timestamp_in_buffer = first_input_timestamp_samples_int;
-  fodm_reg_values.first_input_timestamp = first_input_timestamp_samples_int;
+  fodm_reg_raw_values.first_input_timestamp = first_input_timestamp_samples_int;
 
   // Delay constant fraction
-  fodm_reg_values.delay_constant = static_cast<uint32_t>(delay_constant_scaled);
+  fodm_reg_raw_values.delay_constant = delay_constant;
 
   // Linear delay ratio
-  fodm_reg_values.delay_linear = static_cast<uint64_t>(delay_linear_scaled);
+  fodm_reg_raw_values.delay_linear = delay_linear;
 
   // Constant part of the FO phase polynomial
-  fodm_reg_values.phase_constant = phase_constant_scaled;
+  fodm_reg_raw_values.phase_constant = phase_constant;
 
   // Linear part of the FO phase polynomial
-  fodm_reg_values.phase_linear = phase_linear_scaled;
+  fodm_reg_raw_values.phase_linear = phase_linear;
 
-  // Fill in as per FPGA register definition: "The number of output samples 
-  // that should be output for this FODM less 1"
-  fodm_reg_values.validity_period = static_cast<uint32_t>(validity_interval_samples) - 1;
+
+  fodm_reg_raw_values.validity_period = static_cast<uint32_t>(validity_interval_samples);
 
   // PPS
   // Note on casting the output_pps_samples:
@@ -289,12 +397,48 @@ FirstOrderDelayModelRegisterValues CalcFodmRegisterValues(
     static_cast<uint64_t> (ceil(current_output_timestamp_samples / output_sample_rate) * 
                                   output_sample_rate);
   
-  fodm_reg_values.output_PPS = static_cast<uint32_t> (output_pps_samples_64bit & 0xffffffff);
+  fodm_reg_raw_values.output_PPS = static_cast<uint32_t> (output_pps_samples_64bit & 0xffffffff);
 
   // First output timestamp
-  fodm_reg_values.first_output_timestamp = static_cast<uint64_t>(current_output_timestamp_samples);
+  fodm_reg_raw_values.first_output_timestamp = static_cast<uint64_t>(current_output_timestamp_samples);
 
-  return fodm_reg_values;
+  return fodm_reg_raw_values;
+}
+
+
+FirstOrderDelayModelRegisterValues RawToRegisterValues(
+    const FirstOrderDelayModelRegisterRawValues& raw_values)
+{
+  FirstOrderDelayModelRegisterValues values;
+  values.first_input_timestamp = raw_values.first_input_timestamp;
+  values.delay_constant = ToInt<uint32_t, cpp_bin_float_50>(raw_values.delay_constant, cpp_bin_float_50(pow(2,32)));
+  values.delay_linear = ToInt<uint64_t, cpp_bin_float_50>(raw_values.delay_linear, cpp_bin_float_50(pow(2,63)));
+  values.phase_constant = ToInt<int32_t, cpp_bin_float_50>(raw_values.phase_constant, cpp_bin_float_50(pow(2,31)));
+  values.phase_linear = ToInt<int64_t, cpp_bin_float_50>(raw_values.phase_linear, cpp_bin_float_50(pow(2,63)));
+  // Fill in as per FPGA register definition: "The number of output samples 
+  // that should be output for this FODM less 1"
+  values.validity_period = raw_values.validity_period - 1;
+  values.output_PPS = raw_values.output_PPS;
+  values.first_output_timestamp = raw_values.first_output_timestamp;
+  return values;
+
+}
+
+FirstOrderDelayModelRegisterValuesVer1 RawToRegisterValuesV1(
+    const FirstOrderDelayModelRegisterRawValues& raw_values)
+{
+  FirstOrderDelayModelRegisterValuesVer1 values;
+  values.first_input_timestamp = raw_values.first_input_timestamp;
+  values.delay_constant = ToInt<uint32_t, cpp_bin_float_50>(raw_values.delay_constant, cpp_bin_float_50(pow(2,32)));
+  values.delay_linear = ToInt<uint32_t, cpp_bin_float_50>(raw_values.delay_linear, cpp_bin_float_50(pow(2,31)));
+  values.phase_constant = ToInt<int32_t, cpp_bin_float_50>(raw_values.phase_constant, cpp_bin_float_50(pow(2,31)));
+  values.phase_linear = ToInt<int32_t, cpp_bin_float_50>(raw_values.phase_linear, cpp_bin_float_50(pow(2,31)));
+  // Fill in as per FPGA register definition: "The number of output samples 
+  // that should be output for this FODM less 1"
+  values.validity_period = raw_values.validity_period - 1;
+  values.output_PPS = raw_values.output_PPS;
+  values.first_output_timestamp = raw_values.first_output_timestamp;
+  return values;
 }
 
 }; // namespace ska_mid_cbf_fodm_gen
