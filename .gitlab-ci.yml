@@ -105,7 +105,7 @@ cpp-test:
     paths:
       - build_debug/
     reports:
-      junit: build_debug/src/reports/unit-tests.xml
+      junit: build_debug/src/test/reports/unit-tests.xml
 
 # Using a custom conan job instead of SKA template, as we don't know if SKA will maintain conan support in the future,
 # however we need conan in this repo at least for now to be able to support the Talon (AA0.5/1) RDT.
