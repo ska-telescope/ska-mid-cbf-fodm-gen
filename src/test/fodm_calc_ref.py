@@ -13,7 +13,7 @@ def _get_fs_index(input_sample_rate, output_sample_rate, f_scfo):
     return fs_index
 
 def _to_reg_values(fodm_reg_gen):
-    linear_resolution = 2**31  # 2**63- the linear registers were updated to 64bit 
+    linear_resolution = 2**63
     fodm_regs = {}
     vals = next(fodm_reg_gen)
     fodm_regs["first_input_timestamp"] = vals["first_input_timestamp"]

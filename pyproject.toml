@@ -1,6 +1,6 @@
 [project]
 name = "ska-mid-cbf-fodm-gen"
-version = "0.0.1"
+version = "0.1.0"
 description = "SKA Mid.CBF First Order Delay Model Generation Library"
 authors = [
   { name = "John So", email = "john.so@mda.space" },

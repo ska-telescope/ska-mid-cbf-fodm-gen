@@ -13,8 +13,8 @@ struct FirstOrderDelayModelRegisterValues
     uint64_t first_input_timestamp;
     uint32_t delay_constant;
     int32_t phase_constant;
-    uint32_t delay_linear;
-    int32_t phase_linear;
+    uint64_t delay_linear;
+    int64_t phase_linear;
     uint32_t validity_period;
     uint32_t output_PPS;
     uint64_t first_output_timestamp;

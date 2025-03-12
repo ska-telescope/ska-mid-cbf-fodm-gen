@@ -7,6 +7,7 @@ This project adheres to `Semantic Versioning <http://semver.org/>`_.
 
 UNRELEASED CHANGES
 ******************
+* CIP-3426 - update delay and phase linear registers to 64bit
 
 0.0.1
 ******
