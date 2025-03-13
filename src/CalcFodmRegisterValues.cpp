@@ -361,10 +361,6 @@ FirstOrderDelayModelRegisterRawValues CalcFodmRegisterRawValues(
 #endif
 
   // -------------------------------------------------------------------------
-  // TODO: The firmware driver will likely do the conversion from double
-  //       to the scaled-up integer register value. The section below 
-  //       should be moved to another function. 
-  //
 
   FirstOrderDelayModelRegisterRawValues fodm_reg_raw_values;
 
