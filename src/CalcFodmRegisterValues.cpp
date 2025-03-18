@@ -288,6 +288,11 @@ FirstOrderDelayModelRegisterRawValues CalcFodmRegisterRawValues(
   }
 
   // -----------------------------------------------------------------------
+
+  // SKB-640: After testing with tones inserted by BITE, it's found that
+  //          the sign of alignment shift needs to be flipped for
+  //          the tones to appear at the expected frequencies.
+  freq_align_shift = -freq_align_shift;
   
   // Calculate phase_linear_temp and phase_constant_temp of the FOPP 
   // ([R1] eq. 4, 5);

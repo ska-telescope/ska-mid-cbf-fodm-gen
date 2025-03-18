@@ -1,4 +1,4 @@
 name=ska-mid-cbf-fodm-gen
-release=0.1.0
-tag=0.1.0
+release=0.1.1
+tag=0.1.1
 description=library supporting the generation of first order delay models
