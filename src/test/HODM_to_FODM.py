@@ -76,6 +76,11 @@ def phase_correction(frequency_slice, input_sample_rate, output_sample_rate, wid
         FSI * (FFS_j - FFS_o) * 9 / 10                             # samp/sec
     )  # Frequency shift due to SCFO sampling
 
+    # SKB-640: After testing with tones inserted by BITE, it's found that
+    #          the sign of alignment shift needs to be flipped for
+    #          the tones to appear at the expected frequencies.
+    F_AS = -F_AS 
+
     # phase_linear = 2* np.pi * ((F_SCFO + F_AS) + (F_WB - F_DS) * delay_linear)/FFS_0
     # phase_const= np.mod(k * T1Pv * phase_linear + 2 * np.pi * (F_WB - F_DS) * delay_const, 2 * np.pi)
     # Divide through by 2*pi, since registers are -0.5 to 0.5
